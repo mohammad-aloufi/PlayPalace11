@@ -33,6 +33,9 @@ monopoly-scaffold-started = Monopoly scaffold started with { $preset } ({ $count
 # Turn actions
 monopoly-roll-dice = Roll dice
 monopoly-buy-property = Buy property
+monopoly-banking-balance = Check bank balance
+monopoly-banking-transfer = Transfer funds
+monopoly-banking-ledger = Review bank ledger
 monopoly-end-turn = End turn
 
 # Turn validation
@@ -79,6 +82,7 @@ monopoly-select-property-build = Select a property to build on
 monopoly-select-property-sell = Select a property to sell from
 monopoly-select-trade-offer = Select a trade offer
 monopoly-select-auction-bid = Select your auction bid
+monopoly-select-banking-transfer = Select a transfer
 
 # Additional validation
 monopoly-no-property-to-auction = There is no property to auction right now.
@@ -126,6 +130,11 @@ monopoly-free-parking-jackpot = { $player } collected the Free Parking jackpot o
 monopoly-mortgaged-no-rent = { $player } landed on mortgaged { $property }; no rent is due.
 monopoly-builder-blocks-awarded = { $player } gained { $amount } builder blocks ({ $blocks } total).
 monopoly-builder-block-spent = { $player } spent a builder block ({ $blocks } remaining).
+monopoly-banking-transfer-success = { $from_player } transferred { $amount } to { $to_player }.
+monopoly-banking-transfer-failed = { $player } bank transfer failed ({ $reason }).
+monopoly-banking-balance-report = { $player } bank balance: { $cash }.
+monopoly-banking-ledger-report = Recent banking activity: { $entries }.
+monopoly-banking-ledger-empty = No banking transactions yet.
 
 # Card engine
 monopoly-card-drawn = { $player } drew a { $deck } card: { $card }.
