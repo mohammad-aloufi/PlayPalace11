@@ -50,3 +50,4 @@
 
 ## Next Mario Targets
 1. Define Junior-safe mechanic plan for `junior_super_mario`.
+2. Optionally deepen existing Mario boards beyond card remaps/cash overrides.
