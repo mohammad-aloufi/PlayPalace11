@@ -62,6 +62,7 @@ monopoly-bankrupt-player = You are bankrupt and out of the game.
 monopoly-player-bankrupt = { $player } is bankrupt. Creditor: { $creditor }.
 monopoly-winner-by-bankruptcy = { $player } wins by bankruptcy with { $cash } cash remaining.
 monopoly-winner-by-cash = { $player } wins with the highest cash total: { $cash }.
+monopoly-city-winner-by-value = { $player } wins Monopoly City with final value { $total }.
 
 # Additional actions
 monopoly-auction-property = Auction property

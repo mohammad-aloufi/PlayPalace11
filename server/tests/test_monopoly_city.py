@@ -1,6 +1,7 @@
 """Integration tests for Monopoly City preset behavior."""
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
+from server.messages.localization import Localization
 from server.users.test_user import MockUser
 
 
@@ -77,3 +78,27 @@ def test_city_tie_break_rule_follows_anchor_notes():
     assert game.status == "finished"
     assert game.current_player is not None
     assert game.current_player.id == host.id
+
+
+def test_city_emits_localized_winner_message(monkeypatch):
+    game = _start_two_player_city_game()
+    host = game.current_player
+    assert host is not None
+    assert game.city_engine is not None
+    assert game.city_profile is not None
+
+    emitted_keys: list[str] = []
+    original_broadcast = game.broadcast_l
+
+    def _capture(message_id: str, **kwargs) -> None:
+        emitted_keys.append(message_id)
+        original_broadcast(message_id, **kwargs)
+
+    monkeypatch.setattr(game, "broadcast_l", _capture)
+    game.city_engine.record_progress(host.id, game.city_profile.win_threshold)
+    game.turn_has_rolled = True
+    game.execute_action(host, "end_turn")
+
+    assert "monopoly-city-winner-by-value" in emitted_keys
+    rendered = Localization.get("en", "monopoly-city-winner-by-value", player="Host", total=1)
+    assert rendered != "monopoly-city-winner-by-value"
