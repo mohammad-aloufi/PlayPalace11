@@ -36,7 +36,7 @@
 | `mario_kart` | `monopoly-e1870` | `classic_standard` | `mario_kart` | `partial` | 200 | Wave 1 Mario board; unimplemented mechanics fall back to classic behavior. |
 | `mario_celebration` | `monopoly-e9517` | `classic_standard` | `mario_celebration` | `partial` | 200 | Wave 1 Mario board; unimplemented mechanics fall back to classic behavior. |
 | `mario_movie` | `monopoly-f6818` | `classic_standard` | `mario_movie` | `partial` | 200 | Wave 1 Mario board; unimplemented mechanics fall back to classic behavior. |
-| `junior_super_mario` | `monopoly-f4817` | `junior`, `junior_modern`, `junior_legacy` | `junior_super_mario` | `partial` | 2 | Junior path board profile; incompatible presets auto-fix to `junior`. |
+| `junior_super_mario` | `monopoly-f4817` | `junior`, `junior_modern`, `junior_legacy` | `junior_super_mario` | `partial` | 2 | Junior path board profile; incompatible presets auto-fix to `junior_modern`. |
 
 ## Wave 4 Promotions
 - `mario_kart`: added `card_id_remap` behavior (partial_rules+).
@@ -48,6 +48,11 @@
 ## Wave 6 Promotions
 - `mario_celebration`: added `card_id_remap` and `card_cash_override` behavior (partial_rules+).
 
+## Wave 7 Promotions
+- `junior_super_mario`: enabled manual-core board-rules behavior anchored to `F48170000_INST_MN_Jr_SuperMario_I.pdf`.
+- Added `junior_manual_core` and `junior_powerup_sound_ready` capabilities for `junior_super_mario`.
+- Added deterministic no-sound power-up die mapping and a sound-outcome runtime stub for future phase expansion.
+
 ## Next Mario Targets
-1. Define Junior-safe mechanic plan for `junior_super_mario`.
+1. Implement Phase 2 sound-enabled power-up die behavior using `junior_powerup_sound_ready` hooks.
 2. Optionally deepen existing Mario boards beyond card remaps/cash overrides.
