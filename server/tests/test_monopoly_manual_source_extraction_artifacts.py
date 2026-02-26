@@ -8,7 +8,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 EXTRACTED_DIR = REPO_ROOT / "server/games/monopoly/manual_rules/extracted"
 MANIFEST_PATH = EXTRACTED_DIR / "manifest.json"
 ANCHOR_INDEX_PATH = REPO_ROOT / "server/games/monopoly/catalog/special_board_anchor_index.json"
-TARGET_FAMILIES = {"marvel", "star"}
 EXPECTED_FALLBACK_MODES = {
     "marvel_flip": "strings_fallback",
 }
@@ -18,16 +17,16 @@ def _load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_manifest_covers_marvel_and_star_board_ids() -> None:
+def test_manifest_covers_all_anchor_board_ids() -> None:
     anchor_rows = _load_json(ANCHOR_INDEX_PATH)
     expected_board_ids = {
         row["board_id"]
         for row in anchor_rows
-        if row.get("family") in TARGET_FAMILIES
+        if row.get("board_id")
     }
     manifest_rows = _load_json(MANIFEST_PATH)
     manifest_board_ids = {row["board_id"] for row in manifest_rows}
-    assert manifest_board_ids == expected_board_ids
+    assert expected_board_ids <= manifest_board_ids
 
 
 def test_manifest_entries_are_valid_or_known_exceptions() -> None:

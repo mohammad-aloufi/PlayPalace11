@@ -1080,6 +1080,16 @@
       "locale": "en-us",
       "filename": "F48170000_INST_MN_Jr_SuperMario_I.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/junior_super_mario.txt",
+      "text_sha256": "8ee72fa2a1d0079a745b46ef2fbff0a9341b99248df70c90006bb0d026c14983",
+      "pdf_sha256": "ca71f0c31f8f31cfedecb59aacbf6194e506cf9da022579538a2b9213d950083",
+      "pdf_size_bytes": 93910302,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1120,6 +1130,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-f4817",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f4817",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

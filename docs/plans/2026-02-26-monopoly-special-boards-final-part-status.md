@@ -2,7 +2,7 @@
 
 Date: 2026-02-26  
 Branch: `monopoly`  
-Head: `3db0285`
+Head: `35be7d3`
 
 ## Current Snapshot
 
@@ -19,9 +19,9 @@ Head: `3db0285`
 - `cd server && ../.venv/bin/pytest tests/test_monopoly_manual_rule_payload_completeness.py -v`
   - Result: `55 passed`
 - `cd server && ../.venv/bin/pytest -k monopoly -q`
-  - Result: `1097 passed, 598 deselected`
+  - Result: `1111 passed, 598 deselected`
 
-## New Progress: Manual Source Extraction (Marvel + Star Wars)
+## New Progress: Manual Source Extraction (All Special Boards)
 
 - Added extractor: `server/scripts/monopoly/extract_manual_text.py`
 - Added extracted artifacts:
@@ -31,24 +31,29 @@ Head: `3db0285`
 - Added coverage test:
   - `server/tests/test_monopoly_manual_source_extraction_artifacts.py`
 - Extraction run status:
-  - selected boards: `21`
-  - extracted successfully: `21`
+  - selected boards: `55`
+  - extracted successfully: `55`
   - `marvel_flip` uses `strings_fallback` mode after bounded `pypdf` retry.
 - Rerun command:
-  - `./.venv/bin/python server/scripts/monopoly/extract_manual_text.py --family marvel --family star`
+  - `./.venv/bin/python server/scripts/monopoly/extract_manual_text.py --family ...` (all families from anchor index)
 
 ## New Progress: Payload Seeding from Extracted Manuals
 
 - Added seed applier: `server/scripts/monopoly/apply_manual_extraction_seed.py`
-- Applied extraction-backed metadata into `21` Marvel/Star board payloads:
+- Applied extraction-backed metadata into all `55` special-board payloads:
   - `mechanics.manual_extraction` now records extraction mode, checksums, page count, and text artifact path.
   - `citations` now include `mechanics.manual_extraction`.
 - Applied manual-derived Star Wars action labels:
   - `star_wars_classic_edition`, `star_wars_legacy`: `Use the Force`, `Hyperspace`, `Galactic Empire Tax`
   - `star_wars_mandalorian`, `star_wars_mandalorian_s2`: `Signet`, `Hyperspace Jump`, `Imperial Credits`, `Imperial Advance`
+- Applied manual-derived Mario action/deck labels:
+  - `mario_celebration`: `Question Block`, `Community Chest`; tax labels `Chain Chomp`, `Piranha Plant`
+  - `mario_collectors`: `? Block`, `Warp Pipe`
+  - `mario_kart`: `Power-Up`, `Grand Prix`
+  - `mario_movie`: `Question Block`, `Bowser's Fury`
 - Added seed verification tests:
   - `server/tests/test_monopoly_manual_extraction_seed.py`
-  - Includes full current Marvel action/deck label assertions.
+  - Includes extraction metadata coverage for all 55 boards plus Star/Marvel/Disney/Mario label assertions.
 
 ## New Progress: Marvel Set Coverage
 
@@ -64,6 +69,20 @@ Head: `3db0285`
 - Known extraction-limited exceptions that remain on baseline labels pending stronger source parsing:
   - `marvel_avengers_legacy`
   - `marvel_flip` (currently `strings_fallback` extraction mode)
+
+## New Progress: Disney Set Coverage
+
+- Manual-extraction seed now covers Disney boards with explicit action/deck labels where extract confidence is high:
+  - `disney_animation`: `Magic Mirror`, `Ariel's Treasure Chest`; tax labels `The Evil Queen's Spell`, `Maleficent's Curse`
+  - `disney_legacy`: `Show Time`, `Magic Moments`
+  - `disney_lightyear`: `Hyperspeed`, `Crystallic Fusion`; tax labels `Bugs`, `Zyclops`
+  - `disney_lion_king`: `Destiny`; tax labels `Water Fowl`, `Wild Fire`
+  - `disney_mickey_friends`: `Friendship`, `Magic Moments`; tax labels `Hot Dog Snack Break`, `Popcorn Snack Break`
+  - `disney_princesses`: `Sorte`, `Magia`; tax labels `Imposto`
+  - `disney_star_wars_dark_side`: `The Empire`, `The Dark Side`; tax labels `Rebel Escape`, `Rebel Attack`
+  - `disney_villains`: `Chance`, `Poison Apple`
+- Known extraction-limited Disney exception:
+  - `disney_the_edition`
 
 ## What Has Been Done (Whole Rollout to Date)
 
@@ -97,18 +116,16 @@ Move the remaining `50` `near_full` boards to true `manual_core` by replacing sy
 ## Remaining Work
 
 1. Manual source acquisition and indexing
-   - Obtain canonical PDF/manual assets for each anchor edition.
-   - Track source path/checksum/edition mapping for reproducibility.
+   - Improve source quality for low-text extractions (`disney_the_edition`, `lord_of_the_rings_trilogy`, `marvel_avengers_legacy`, `star_wars_saga`) where current extracts are too sparse for reliable card-by-card promotion.
+   - Continue tracking source path/checksum/edition mapping for reproducibility.
 2. PDF extraction pipeline
-   - Add a reproducible parser/OCR flow for rule text and cards.
+   - Add a reproducible parser/OCR flow for image-heavy manuals and board-art-heavy PDFs.
    - Normalize extracted rules into `manual_rules/data/*.json`.
    - Preserve `manual excerpt -> rule_path` traceability.
 3. Family-by-family manual-auth pass
    - Priority:
-     1. Marvel (10 boards)
-     2. Star Wars (11 boards)
-     3. Disney (9 boards)
-     4. Remaining long-tail families
+     1. Long-tail families with newly seeded extraction metadata (animal, barbie, black, deadpool, fortnite, game, ghostbusters, harry, jurassic, lord, pokemon, stranger, toy, transformers)
+     2. Remaining extraction-limited exceptions in Marvel/Star/Disney
    - For each board: replace placeholders, update citations, then promote to `manual_core`.
 4. Hardware and sound readiness continuity
    - Keep `hardware_capability_ids` aligned with manual evidence.

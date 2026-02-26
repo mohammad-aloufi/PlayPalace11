@@ -1090,6 +1090,10 @@
       "pdf_sha256": "3a992db7ecf7fa25d1de9cf327a582c3f4bdfb613c0973104a8921f4900b2922",
       "pdf_size_bytes": 24520996,
       "page_count": 2
+    },
+    "decks": {
+      "chance": "Signet",
+      "community_chest": "Hyperspace Jump"
     }
   },
   "win_condition": {
@@ -1154,6 +1158,12 @@
       "rule_path": "board.spaces.tax.name",
       "edition_id": "monopoly-f1276",
       "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "mechanics.decks",
+      "edition_id": "monopoly-f1276",
+      "page_ref": "manual-extract:deck-labels",
       "confidence": "medium"
     }
   ]

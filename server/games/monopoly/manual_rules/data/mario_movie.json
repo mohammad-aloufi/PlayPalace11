@@ -35,7 +35,7 @@
       {
         "position": 2,
         "space_id": "community_chest_1",
-        "name": "Community Chest",
+        "name": "Bowser's Fury",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -104,7 +104,7 @@
       {
         "position": 7,
         "space_id": "chance_1",
-        "name": "Chance",
+        "name": "Question Block",
         "kind": "chance",
         "price": 0,
         "rent": 0,
@@ -256,7 +256,7 @@
       {
         "position": 17,
         "space_id": "community_chest_2",
-        "name": "Community Chest",
+        "name": "Bowser's Fury",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -332,7 +332,7 @@
       {
         "position": 22,
         "space_id": "chance_2",
-        "name": "Chance",
+        "name": "Question Block",
         "kind": "chance",
         "price": 0,
         "rent": 0,
@@ -502,7 +502,7 @@
       {
         "position": 33,
         "space_id": "community_chest_3",
-        "name": "Community Chest",
+        "name": "Bowser's Fury",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -542,7 +542,7 @@
       {
         "position": 36,
         "space_id": "chance_3",
-        "name": "Chance",
+        "name": "Question Block",
         "kind": "chance",
         "price": 0,
         "rent": 0,
@@ -1078,6 +1078,20 @@
       "locale": "en-us",
       "filename": "F68180000_INST_MONOPOLY_SUPER_MARIO_MOVIE_S23.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/mario_movie.txt",
+      "text_sha256": "86c861d968b83de6492b23ea81c8fdde46a693a13af29e0b63dba0f8cadc57cb",
+      "pdf_sha256": "eaed985139d1c235c54129a3f8a927e7f634ae29aadc2514fb096c0c55ac8278",
+      "pdf_size_bytes": 34210074,
+      "page_count": 2
+    },
+    "decks": {
+      "chance": "Question Block",
+      "community_chest": "Bowser's Fury"
     }
   },
   "win_condition": {
@@ -1119,6 +1133,30 @@
       "edition_id": "monopoly-f6818",
       "page_ref": "catalog:en-us",
       "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f6818",
+      "page_ref": "manual-extract:pypdf",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "board.spaces.chance.name",
+      "edition_id": "monopoly-f6818",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "board.spaces.community_chest.name",
+      "edition_id": "monopoly-f6818",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "mechanics.decks",
+      "edition_id": "monopoly-f6818",
+      "page_ref": "manual-extract:deck-labels",
+      "confidence": "medium"
     }
   ]
 }

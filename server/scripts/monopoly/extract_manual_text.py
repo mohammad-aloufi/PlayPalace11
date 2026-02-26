@@ -148,6 +148,7 @@ def run_extraction(
     output_dir: Path,
     timeout: float,
     zlib_max_output_length: int,
+    merge_manifest: bool,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     anchor_rows = _load_json(anchor_index_path)
@@ -156,6 +157,18 @@ def run_extraction(
         raise SystemExit("No matching boards selected.")
 
     manifest_rows: list[dict[str, Any]] = []
+    target_board_ids = {str(row.get("board_id", "")) for row in targets}
+    if merge_manifest:
+        existing_manifest_path = output_dir / "manifest.json"
+        if existing_manifest_path.exists():
+            existing_rows = _load_json(existing_manifest_path)
+            if isinstance(existing_rows, list):
+                for row in existing_rows:
+                    if not isinstance(row, dict):
+                        continue
+                    board_id = str(row.get("board_id", ""))
+                    if board_id and board_id not in target_board_ids:
+                        manifest_rows.append(row)
     for row in targets:
         board_id = str(row["board_id"])
         family = str(row.get("family", ""))
@@ -302,6 +315,11 @@ def main() -> None:
             "(0 disables limit)."
         ),
     )
+    parser.add_argument(
+        "--no-merge-manifest",
+        action="store_true",
+        help="Do not preserve existing manifest rows for non-target boards.",
+    )
     args = parser.parse_args()
 
     families = {value.strip() for value in args.family if value.strip()}
@@ -317,6 +335,7 @@ def main() -> None:
         output_dir=args.output_dir,
         timeout=args.timeout,
         zlib_max_output_length=args.zlib_max_output_length,
+        merge_manifest=not args.no_merge_manifest,
     )
 
 

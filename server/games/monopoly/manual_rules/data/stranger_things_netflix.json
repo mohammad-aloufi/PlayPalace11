@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "F2544UE21_INST_MN_ST4_S22_FAR.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/stranger_things_netflix.txt",
+      "text_sha256": "52d846bd1ec2b6499da7632b28e795ad4f1b2befe6bbc47689ecd48b6154ccc0",
+      "pdf_sha256": "ff2cd852dfe655c14d1a1369a891dcd176ffa63957834cbffcd997971ebdeb50",
+      "pdf_size_bytes": 53577831,
+      "page_count": 55
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-f2544",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f2544",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "E57970000_360315_MONOPOLY_BLACK_PANTHER_INST_FAR.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/black_panther.txt",
+      "text_sha256": "dce8448c23beba19990195050a7ab49ce3534e9b34f9fdda9625a3413c585c76",
+      "pdf_sha256": "edc6643c2344eecdbab485f4c6194b42a8f3d0a92345f4c312eead2e78d36c73",
+      "pdf_size_bytes": 126569991,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-e5797",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-e5797",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

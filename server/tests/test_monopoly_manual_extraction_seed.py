@@ -11,7 +11,6 @@ from server.games.monopoly.manual_rules.loader import load_manual_rule_set
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ANCHOR_INDEX_PATH = REPO_ROOT / "server/games/monopoly/catalog/special_board_anchor_index.json"
 MANIFEST_PATH = REPO_ROOT / "server/games/monopoly/manual_rules/extracted/manifest.json"
-TARGET_FAMILIES = {"marvel", "star"}
 
 
 def _load_json(path: Path):
@@ -23,11 +22,11 @@ def _target_board_ids() -> list[str]:
     return sorted(
         row["board_id"]
         for row in anchor_rows
-        if row.get("family") in TARGET_FAMILIES
+        if row.get("board_id")
     )
 
 
-def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
+def test_special_board_rules_include_extraction_seed_metadata() -> None:
     manifest_rows = _load_json(MANIFEST_PATH)
     manifest_by_board = {row["board_id"]: row for row in manifest_rows}
 
@@ -49,7 +48,7 @@ def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    ("board_id", "expected"),
+    ("board_id", "expected_names", "expected_decks"),
     [
         (
             "star_wars_classic_edition",
@@ -62,6 +61,10 @@ def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
                 "community_chest_3": "Hyperspace",
                 "income_tax": "Galactic Empire Tax",
                 "luxury_tax": "Galactic Empire Tax",
+            },
+            {
+                "chance": "Use the Force",
+                "community_chest": "Hyperspace",
             },
         ),
         (
@@ -76,6 +79,10 @@ def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
                 "income_tax": "Galactic Empire Tax",
                 "luxury_tax": "Galactic Empire Tax",
             },
+            {
+                "chance": "Use the Force",
+                "community_chest": "Hyperspace",
+            },
         ),
         (
             "star_wars_mandalorian",
@@ -88,6 +95,10 @@ def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
                 "community_chest_3": "Hyperspace Jump",
                 "income_tax": "Imperial Credits",
                 "luxury_tax": "Imperial Advance",
+            },
+            {
+                "chance": "Signet",
+                "community_chest": "Hyperspace Jump",
             },
         ),
         (
@@ -102,20 +113,26 @@ def test_marvel_and_star_rules_include_extraction_seed_metadata() -> None:
                 "income_tax": "Imperial Credits",
                 "luxury_tax": "Imperial Advance",
             },
+            {
+                "chance": "Signet",
+                "community_chest": "Hyperspace Jump",
+            },
         ),
     ],
 )
 def test_star_wars_seed_applies_manual_action_space_labels(
     board_id: str,
-    expected: dict[str, str],
+    expected_names: dict[str, str],
+    expected_decks: dict[str, str],
 ) -> None:
     rule_set = load_manual_rule_set(board_id)
     by_space_id = {
         row["space_id"]: row["name"]
         for row in rule_set.board.get("spaces", [])
     }
-    for space_id, expected_name in expected.items():
+    for space_id, expected_name in expected_names.items():
         assert by_space_id.get(space_id) == expected_name
+    assert rule_set.mechanics.get("decks") == expected_decks
 
 
 @pytest.mark.parametrize(
@@ -263,6 +280,241 @@ def test_marvel_seed_applies_manual_action_labels_and_deck_metadata(
     assert rule_set.mechanics.get("decks") == expected_decks
 
 
+@pytest.mark.parametrize(
+    ("board_id", "expected_names", "expected_decks"),
+    [
+        (
+            "disney_animation",
+            {
+                "chance_1": "Magic Mirror",
+                "chance_2": "Magic Mirror",
+                "chance_3": "Magic Mirror",
+                "community_chest_1": "Ariel's Treasure Chest",
+                "community_chest_2": "Ariel's Treasure Chest",
+                "community_chest_3": "Ariel's Treasure Chest",
+                "income_tax": "The Evil Queen's Spell",
+                "luxury_tax": "Maleficent's Curse",
+            },
+            {
+                "chance": "Magic Mirror",
+                "community_chest": "Ariel's Treasure Chest",
+            },
+        ),
+        (
+            "disney_legacy",
+            {
+                "chance_1": "Show Time",
+                "chance_2": "Show Time",
+                "chance_3": "Show Time",
+                "community_chest_1": "Magic Moments",
+                "community_chest_2": "Magic Moments",
+                "community_chest_3": "Magic Moments",
+            },
+            {
+                "chance": "Show Time",
+                "community_chest": "Magic Moments",
+            },
+        ),
+        (
+            "disney_lightyear",
+            {
+                "chance_1": "Hyperspeed",
+                "chance_2": "Hyperspeed",
+                "chance_3": "Hyperspeed",
+                "community_chest_1": "Crystallic Fusion",
+                "community_chest_2": "Crystallic Fusion",
+                "community_chest_3": "Crystallic Fusion",
+                "income_tax": "Bugs",
+                "luxury_tax": "Zyclops",
+            },
+            {
+                "chance": "Hyperspeed",
+                "community_chest": "Crystallic Fusion",
+            },
+        ),
+        (
+            "disney_lion_king",
+            {
+                "chance_1": "Destiny",
+                "chance_2": "Destiny",
+                "chance_3": "Destiny",
+                "community_chest_1": "Destiny",
+                "community_chest_2": "Destiny",
+                "community_chest_3": "Destiny",
+                "income_tax": "Water Fowl",
+                "luxury_tax": "Wild Fire",
+            },
+            {
+                "chance": "Destiny",
+                "community_chest": "Destiny",
+            },
+        ),
+        (
+            "disney_mickey_friends",
+            {
+                "chance_1": "Friendship",
+                "chance_2": "Friendship",
+                "chance_3": "Friendship",
+                "community_chest_1": "Magic Moments",
+                "community_chest_2": "Magic Moments",
+                "community_chest_3": "Magic Moments",
+                "income_tax": "Hot Dog Snack Break",
+                "luxury_tax": "Popcorn Snack Break",
+            },
+            {
+                "chance": "Friendship",
+                "community_chest": "Magic Moments",
+            },
+        ),
+        (
+            "disney_princesses",
+            {
+                "chance_1": "Sorte",
+                "chance_2": "Sorte",
+                "chance_3": "Sorte",
+                "community_chest_1": "Magia",
+                "community_chest_2": "Magia",
+                "community_chest_3": "Magia",
+                "income_tax": "Imposto",
+                "luxury_tax": "Imposto",
+            },
+            {
+                "chance": "Sorte",
+                "community_chest": "Magia",
+            },
+        ),
+        (
+            "disney_star_wars_dark_side",
+            {
+                "chance_1": "The Empire",
+                "chance_2": "The Empire",
+                "chance_3": "The Empire",
+                "community_chest_1": "The Dark Side",
+                "community_chest_2": "The Dark Side",
+                "community_chest_3": "The Dark Side",
+                "income_tax": "Rebel Escape",
+                "luxury_tax": "Rebel Attack",
+            },
+            {
+                "chance": "The Empire",
+                "community_chest": "The Dark Side",
+            },
+        ),
+        (
+            "disney_villains",
+            {
+                "chance_1": "Chance",
+                "chance_2": "Chance",
+                "chance_3": "Chance",
+                "community_chest_1": "Poison Apple",
+                "community_chest_2": "Poison Apple",
+                "community_chest_3": "Poison Apple",
+            },
+            {
+                "chance": "Chance",
+                "community_chest": "Poison Apple",
+            },
+        ),
+    ],
+)
+def test_disney_seed_applies_manual_action_labels_and_deck_metadata(
+    board_id: str,
+    expected_names: dict[str, str],
+    expected_decks: dict[str, str],
+) -> None:
+    rule_set = load_manual_rule_set(board_id)
+    by_space_id = {
+        row["space_id"]: row["name"]
+        for row in rule_set.board.get("spaces", [])
+    }
+    for space_id, expected_name in expected_names.items():
+        assert by_space_id.get(space_id) == expected_name
+
+    assert rule_set.mechanics.get("decks") == expected_decks
+
+
+@pytest.mark.parametrize(
+    ("board_id", "expected_names", "expected_decks"),
+    [
+        (
+            "mario_celebration",
+            {
+                "chance_1": "Question Block",
+                "chance_2": "Question Block",
+                "chance_3": "Question Block",
+                "community_chest_1": "Community Chest",
+                "community_chest_2": "Community Chest",
+                "community_chest_3": "Community Chest",
+                "income_tax": "Chain Chomp",
+                "luxury_tax": "Piranha Plant",
+            },
+            {
+                "chance": "Question Block",
+                "community_chest": "Community Chest",
+            },
+        ),
+        (
+            "mario_collectors",
+            {
+                "chance_1": "? Block",
+                "chance_2": "? Block",
+                "chance_3": "? Block",
+                "community_chest_1": "Warp Pipe",
+                "community_chest_2": "Warp Pipe",
+                "community_chest_3": "Warp Pipe",
+            },
+            {
+                "chance": "? Block",
+                "community_chest": "Warp Pipe",
+            },
+        ),
+        (
+            "mario_kart",
+            {
+                "chance_1": "Power-Up",
+                "chance_2": "Power-Up",
+                "chance_3": "Power-Up",
+                "community_chest_1": "Grand Prix",
+                "community_chest_2": "Grand Prix",
+                "community_chest_3": "Grand Prix",
+            },
+            {
+                "chance": "Power-Up",
+                "community_chest": "Grand Prix",
+            },
+        ),
+        (
+            "mario_movie",
+            {
+                "chance_1": "Question Block",
+                "chance_2": "Question Block",
+                "chance_3": "Question Block",
+                "community_chest_1": "Bowser's Fury",
+                "community_chest_2": "Bowser's Fury",
+                "community_chest_3": "Bowser's Fury",
+            },
+            {
+                "chance": "Question Block",
+                "community_chest": "Bowser's Fury",
+            },
+        ),
+    ],
+)
+def test_mario_seed_applies_manual_action_labels_and_deck_metadata(
+    board_id: str,
+    expected_names: dict[str, str],
+    expected_decks: dict[str, str],
+) -> None:
+    rule_set = load_manual_rule_set(board_id)
+    by_space_id = {
+        row["space_id"]: row["name"]
+        for row in rule_set.board.get("spaces", [])
+    }
+    for space_id, expected_name in expected_names.items():
+        assert by_space_id.get(space_id) == expected_name
+    assert rule_set.mechanics.get("decks") == expected_decks
+
+
 def test_remaining_marvel_boards_without_deck_labels_are_known_exceptions() -> None:
     anchor_rows = _load_json(ANCHOR_INDEX_PATH)
     marvel_board_ids = sorted(
@@ -276,3 +528,33 @@ def test_remaining_marvel_boards_without_deck_labels_are_known_exceptions() -> N
         if not isinstance(rule_set.mechanics.get("decks"), dict):
             missing_deck_ids.append(board_id)
     assert missing_deck_ids == ["marvel_avengers_legacy", "marvel_flip"]
+
+
+def test_remaining_disney_boards_without_deck_labels_are_known_exceptions() -> None:
+    anchor_rows = _load_json(ANCHOR_INDEX_PATH)
+    disney_board_ids = sorted(
+        row["board_id"]
+        for row in anchor_rows
+        if str(row.get("board_id", "")).startswith("disney_")
+    )
+    missing_deck_ids: list[str] = []
+    for board_id in disney_board_ids:
+        rule_set = load_manual_rule_set(board_id)
+        if not isinstance(rule_set.mechanics.get("decks"), dict):
+            missing_deck_ids.append(board_id)
+    assert missing_deck_ids == ["disney_the_edition"]
+
+
+def test_all_mario_boards_have_seeded_deck_labels() -> None:
+    anchor_rows = _load_json(ANCHOR_INDEX_PATH)
+    mario_board_ids = sorted(
+        row["board_id"]
+        for row in anchor_rows
+        if str(row.get("board_id", "")).startswith("mario_")
+    )
+    missing_deck_ids: list[str] = []
+    for board_id in mario_board_ids:
+        rule_set = load_manual_rule_set(board_id)
+        if not isinstance(rule_set.mechanics.get("decks"), dict):
+            missing_deck_ids.append(board_id)
+    assert missing_deck_ids == []

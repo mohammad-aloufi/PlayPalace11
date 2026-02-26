@@ -1,0 +1,17 @@
+{
+  "anchor_edition_id": "monopoly-41603",
+  "board_id": "lord_of_the_rings_trilogy",
+  "extraction_mode": "pypdf",
+  "family": "lord",
+  "filename": "72a053ec105f684729f7f7db4df22d84.pdf",
+  "instruction_url": "https://instructions.hasbro.com/en-us/instruction/monopoly-the-lord-of-the-rings-trilogy-edition",
+  "page_count": 6,
+  "pdf_sha256": "1ea9369381e3faf3cd8420993148b730d13606448411cc19e2a25193dde24718",
+  "pdf_size_bytes": 2834614,
+  "pdf_url": "https://assets-us-01.kc-usercontent.com:443/500e0a65-283d-00ef-33b2-7f1f20488fe2/01e404cb-8c18-432b-a31a-a9b6964e0907/72a053ec105f684729f7f7db4df22d84.pdf",
+  "status": "ok",
+  "text_char_count": 100,
+  "text_path": "server/games/monopoly/manual_rules/extracted/lord_of_the_rings_trilogy.txt",
+  "text_sha256": "740801d044a533d5f66d69c2b93a00dc26ba33bf4ac4f50da251d7910d9db1ab",
+  "zlib_limit_used": 120000000
+}

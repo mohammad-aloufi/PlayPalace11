@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "a787ce279869d17cf69c10cf00591d95.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/fortnite.txt",
+      "text_sha256": "411112ad8f2f79bc5e14fa51dba5a5a76502a97c4a4bcedbca454b30274e155e",
+      "pdf_sha256": "dec6382e8b1f52b316b13403a1b499c4cff359544b1d74d7ba61f47a4a9b8aa4",
+      "pdf_size_bytes": 35067756,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-e6603",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-e6603",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

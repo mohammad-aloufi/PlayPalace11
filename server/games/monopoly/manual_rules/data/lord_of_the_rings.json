@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "F16630952_INST_MN_LOTR_S21.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/lord_of_the_rings.txt",
+      "text_sha256": "1a69d915dc030c3768193c4d0239fe0b50ca1e14b6463163dd8384e0a037564b",
+      "pdf_sha256": "2988da9be0aaea68d6a553ae9b2c54f199c998a84132e20b78a6b9b27e0e3c85",
+      "pdf_size_bytes": 30051703,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-f1663",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f1663",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

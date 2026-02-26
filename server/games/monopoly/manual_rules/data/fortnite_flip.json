@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "F77740000_INST_MN_Fortnite_Flip_F23.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/fortnite_flip.txt",
+      "text_sha256": "0cfe5254cd4328704414f3eb8533114e878b186aae0c30d6ccebf4a0c2f22b6d",
+      "pdf_sha256": "468f3b1ddf0fb9ac10ffa4bcbc30fb2dbfff181f18930373da3ed3369af6cb85",
+      "pdf_size_bytes": 58788278,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-f7774",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f7774",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

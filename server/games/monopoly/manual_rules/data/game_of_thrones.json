@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "51bd8cd9b5c0ddddd38aa5c35a5338af.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/game_of_thrones.txt",
+      "text_sha256": "d74a7ec4eb58277fe4ec4bf23b4b5da55060fd48f4916c8fd61eec19d6d1e358",
+      "pdf_sha256": "fd7ab12af498f8e0fc80b76ea962c9404b26c7a1603ee4bf5989c07c38ea334f",
+      "pdf_size_bytes": 18610430,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-e3278",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-e3278",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "754f6aee9c47b06156ab22596f1dcf5d.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/disney_the_edition.txt",
+      "text_sha256": "b3f2fd5e6ee6137054a2111f17f194c0eaa311594f19553a25d72af30a1598e1",
+      "pdf_sha256": "daa2b36ef1cfed51bdcd6fc07f77645551fd043dfd98b142b408b43bcb52294e",
+      "pdf_size_bytes": 2603069,
+      "page_count": 8
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-40224",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-40224",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

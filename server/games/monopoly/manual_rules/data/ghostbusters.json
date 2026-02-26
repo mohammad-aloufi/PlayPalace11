@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "054b25a959a47859f4c94f5818e287ab.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/ghostbusters.txt",
+      "text_sha256": "0ad4f2fa354af80e77e85cbf49ec7f3fc6c2f4f3d02ffa87d0458bd89fdb43d8",
+      "pdf_sha256": "a288a28ff6635361b4f0ab4cb946f19381f7a58b548b0195f5d2dae0c1b3d4ce",
+      "pdf_size_bytes": 12975114,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-e9479",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-e9479",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

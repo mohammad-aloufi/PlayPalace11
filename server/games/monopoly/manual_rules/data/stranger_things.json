@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "C45500000_ST_Monopoly_17_INST.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/stranger_things.txt",
+      "text_sha256": "c1d198c443f6553268768e4913d2892ffacb5332e496effc2c7655d97c59b05f",
+      "pdf_sha256": "b9cfb79f7c53ed4d5d84c99053765d2b2563dd09de09914271936489724d6164",
+      "pdf_size_bytes": 5924630,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-c4550",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-c4550",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

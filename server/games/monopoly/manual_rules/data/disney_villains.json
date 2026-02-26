@@ -35,7 +35,7 @@
       {
         "position": 2,
         "space_id": "community_chest_1",
-        "name": "Community Chest",
+        "name": "Poison Apple",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -256,7 +256,7 @@
       {
         "position": 17,
         "space_id": "community_chest_2",
-        "name": "Community Chest",
+        "name": "Poison Apple",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -502,7 +502,7 @@
       {
         "position": 33,
         "space_id": "community_chest_3",
-        "name": "Community Chest",
+        "name": "Poison Apple",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -1078,6 +1078,20 @@
       "locale": "en-us",
       "filename": "7491d7b4aa4e803852e76d1fc74bd50f.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/disney_villains.txt",
+      "text_sha256": "1c15a4884e94e13bbc06ade10c475b0310bab31d487821947436cae5e5c840c8",
+      "pdf_sha256": "6e943b34785c06a15ada83139fc9e6d2a3585975fea137dd765a2ffd9cbd9319",
+      "pdf_size_bytes": 83220838,
+      "page_count": 2
+    },
+    "decks": {
+      "chance": "Chance",
+      "community_chest": "Poison Apple"
     }
   },
   "win_condition": {
@@ -1119,6 +1133,30 @@
       "edition_id": "monopoly-f0091",
       "page_ref": "catalog:en-us",
       "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-f0091",
+      "page_ref": "manual-extract:pypdf",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "board.spaces.chance.name",
+      "edition_id": "monopoly-f0091",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "board.spaces.community_chest.name",
+      "edition_id": "monopoly-f0091",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "mechanics.decks",
+      "edition_id": "monopoly-f0091",
+      "page_ref": "manual-extract:deck-labels",
+      "confidence": "medium"
     }
   ]
 }

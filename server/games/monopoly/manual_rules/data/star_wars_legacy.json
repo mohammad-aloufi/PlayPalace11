@@ -1088,6 +1088,10 @@
       "pdf_sha256": "9b283609c30984cc5f5cfa18db4b7ee701f0f73e5349bf0cf472f8bda46c2dd3",
       "pdf_size_bytes": 12085144,
       "page_count": 6
+    },
+    "decks": {
+      "chance": "Use the Force",
+      "community_chest": "Hyperspace"
     }
   },
   "win_condition": {
@@ -1152,6 +1156,12 @@
       "rule_path": "board.spaces.tax.name",
       "edition_id": "monopoly-b0324",
       "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "mechanics.decks",
+      "edition_id": "monopoly-b0324",
+      "page_ref": "manual-extract:deck-labels",
       "confidence": "medium"
     }
   ]

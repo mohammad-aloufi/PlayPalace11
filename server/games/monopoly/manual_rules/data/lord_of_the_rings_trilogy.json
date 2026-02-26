@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "72a053ec105f684729f7f7db4df22d84.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/lord_of_the_rings_trilogy.txt",
+      "text_sha256": "740801d044a533d5f66d69c2b93a00dc26ba33bf4ac4f50da251d7910d9db1ab",
+      "pdf_sha256": "1ea9369381e3faf3cd8420993148b730d13606448411cc19e2a25193dde24718",
+      "pdf_size_bytes": 2834614,
+      "page_count": 6
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-41603",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-41603",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]

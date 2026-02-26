@@ -1078,6 +1078,16 @@
       "locale": "en-us",
       "filename": "E81940000_413781_MN_STCE_F19_INST.pdf",
       "source": "catalog_manual_variant"
+    },
+    "manual_extraction": {
+      "status": "seeded_from_extracted_manual_text",
+      "extraction_mode": "pypdf",
+      "manifest_path": "server/games/monopoly/manual_rules/extracted/manifest.json",
+      "text_path": "server/games/monopoly/manual_rules/extracted/stranger_things_collectors.txt",
+      "text_sha256": "c3a2572da46d64bb672ec618a4ca2298264680ccf00303ad096ec38c63be2863",
+      "pdf_sha256": "91d01ecdc9541f9616ddca5ee9e3d1645845b364d2e028bbffda0d2169ed67ec",
+      "pdf_size_bytes": 65969567,
+      "page_count": 2
     }
   },
   "win_condition": {
@@ -1118,6 +1128,12 @@
       "rule_path": "mechanics.manual_source",
       "edition_id": "monopoly-e8194",
       "page_ref": "catalog:en-us",
+      "confidence": "high"
+    },
+    {
+      "rule_path": "mechanics.manual_extraction",
+      "edition_id": "monopoly-e8194",
+      "page_ref": "manual-extract:pypdf",
       "confidence": "high"
     }
   ]
