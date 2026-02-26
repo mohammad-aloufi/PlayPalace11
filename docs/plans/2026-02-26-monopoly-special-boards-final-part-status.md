@@ -2,7 +2,7 @@
 
 Date: 2026-02-26  
 Branch: `monopoly`  
-Head: `35be7d3`
+Head: `674178c`
 
 ## Current Snapshot
 
@@ -19,7 +19,7 @@ Head: `35be7d3`
 - `cd server && ../.venv/bin/pytest tests/test_monopoly_manual_rule_payload_completeness.py -v`
   - Result: `55 passed`
 - `cd server && ../.venv/bin/pytest -k monopoly -q`
-  - Result: `1132 passed, 598 deselected`
+  - Result: `1140 passed, 598 deselected`
 
 ## New Progress: Manual Source Extraction (All Special Boards)
 
@@ -91,9 +91,15 @@ Head: `35be7d3`
   - `barbie`: `Dream Career`, `Dream Closet`
   - `black_panther`: `Kimoyo Beads`, `Heart-Shaped Herb`
   - `deadpool_collectors`: `Dumb Luck`, `Pouches`
+  - `fortnite`: `Storm`, `Loot Chest`
   - `fortnite_collectors`: `Storm`, `Loot Chest`
   - `fortnite_flip`: `Game Mode`, `Loot Chest`
+  - `game_of_thrones`: `Chance Cards`; tax labels `The Dothraki Tribute`, `Iron Bank Tax`
+  - `ghostbusters`: `Roaming Vapor`
+  - `harry_potter`: `Owl Post`; tax labels `Filch and Mrs. Norris`
+  - `junior_super_mario`: `Chance`
   - `jurassic_park`: `Impact Tremor`, `Cold Storage`
+  - `lord_of_the_rings`: `Quest`
   - `pokemon`: `Adventure`, `Challenge`
   - `stranger_things`: `Walkie-Talkie`, `Blinking Lights`
   - `stranger_things_collectors`: `Transmission`, `Upside Down`
@@ -104,11 +110,9 @@ Head: `35be7d3`
 - Expanded Star Wars label/deck coverage beyond the original 4 boards:
   - `star_wars_40th`, `star_wars_boba_fett`, `star_wars_complete_saga`,
     `star_wars_light_side`, `star_wars_solo`, `star_wars_the_child`.
-- Remaining boards without deck-label seeding are now reduced to 11:
-  - `disney_the_edition`, `fortnite`, `game_of_thrones`, `ghostbusters`,
-    `harry_potter`, `junior_super_mario`, `lord_of_the_rings`,
-    `lord_of_the_rings_trilogy`, `marvel_avengers_legacy`,
-    `marvel_flip`, `star_wars_saga`
+- Remaining boards without deck-label seeding are now reduced to 5:
+  - `disney_the_edition`, `lord_of_the_rings_trilogy`,
+    `marvel_avengers_legacy`, `marvel_flip`, `star_wars_saga`
 
 ## What Has Been Done (Whole Rollout to Date)
 

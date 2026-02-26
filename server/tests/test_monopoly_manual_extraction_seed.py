@@ -612,9 +612,15 @@ def test_mario_seed_applies_manual_action_labels_and_deck_metadata(
         ("barbie", "Dream Career", "Dream Closet"),
         ("black_panther", "Kimoyo Beads", "Heart-Shaped Herb"),
         ("deadpool_collectors", "Dumb Luck", "Pouches"),
+        ("fortnite", "Storm", "Loot Chest"),
         ("fortnite_collectors", "Storm", "Loot Chest"),
         ("fortnite_flip", "Game Mode", "Loot Chest"),
+        ("game_of_thrones", "Chance Cards", "Chance Cards"),
+        ("ghostbusters", "Roaming Vapor", "Roaming Vapor"),
+        ("harry_potter", "Owl Post", "Owl Post"),
+        ("junior_super_mario", "Chance", "Chance"),
         ("jurassic_park", "Impact Tremor", "Cold Storage"),
+        ("lord_of_the_rings", "Quest", "Quest"),
         ("pokemon", "Adventure", "Challenge"),
         ("stranger_things", "Walkie-Talkie", "Blinking Lights"),
         ("stranger_things_collectors", "Transmission", "Upside Down"),
@@ -642,6 +648,27 @@ def test_long_tail_seed_applies_manual_deck_labels(
         "chance": expected_chance,
         "community_chest": expected_community,
     }
+
+
+@pytest.mark.parametrize(
+    ("board_id", "expected_income", "expected_luxury"),
+    [
+        ("game_of_thrones", "The Dothraki Tribute", "Iron Bank Tax"),
+        ("harry_potter", "Filch and Mrs. Norris", "Filch and Mrs. Norris"),
+    ],
+)
+def test_long_tail_seed_applies_manual_tax_labels(
+    board_id: str,
+    expected_income: str,
+    expected_luxury: str,
+) -> None:
+    rule_set = load_manual_rule_set(board_id)
+    by_space_id = {
+        row["space_id"]: row["name"]
+        for row in rule_set.board.get("spaces", [])
+    }
+    assert by_space_id.get("income_tax") == expected_income
+    assert by_space_id.get("luxury_tax") == expected_luxury
 
 
 def test_remaining_marvel_boards_without_deck_labels_are_known_exceptions() -> None:
@@ -703,12 +730,6 @@ def test_remaining_special_boards_without_deck_labels_are_known_exceptions() -> 
             missing_deck_ids.append(board_id)
     assert missing_deck_ids == [
         "disney_the_edition",
-        "fortnite",
-        "game_of_thrones",
-        "ghostbusters",
-        "harry_potter",
-        "junior_super_mario",
-        "lord_of_the_rings",
         "lord_of_the_rings_trilogy",
         "marvel_avengers_legacy",
         "marvel_flip",

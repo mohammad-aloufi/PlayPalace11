@@ -437,6 +437,14 @@ LONG_TAIL_ACTION_SPACE_NAME_OVERRIDES: dict[str, dict[str, str]] = {
         "community_chest_2": "Pouches",
         "community_chest_3": "Pouches",
     },
+    "fortnite": {
+        "chance_1": "Storm",
+        "chance_2": "Storm",
+        "chance_3": "Storm",
+        "community_chest_1": "Loot Chest",
+        "community_chest_2": "Loot Chest",
+        "community_chest_3": "Loot Chest",
+    },
     "fortnite_collectors": {
         "chance_1": "Storm",
         "chance_2": "Storm",
@@ -453,6 +461,42 @@ LONG_TAIL_ACTION_SPACE_NAME_OVERRIDES: dict[str, dict[str, str]] = {
         "community_chest_2": "Loot Chest",
         "community_chest_3": "Loot Chest",
     },
+    "game_of_thrones": {
+        "chance_1": "Chance Cards",
+        "chance_2": "Chance Cards",
+        "chance_3": "Chance Cards",
+        "community_chest_1": "Chance Cards",
+        "community_chest_2": "Chance Cards",
+        "community_chest_3": "Chance Cards",
+        "income_tax": "The Dothraki Tribute",
+        "luxury_tax": "Iron Bank Tax",
+    },
+    "ghostbusters": {
+        "chance_1": "Roaming Vapor",
+        "chance_2": "Roaming Vapor",
+        "chance_3": "Roaming Vapor",
+        "community_chest_1": "Roaming Vapor",
+        "community_chest_2": "Roaming Vapor",
+        "community_chest_3": "Roaming Vapor",
+    },
+    "harry_potter": {
+        "chance_1": "Owl Post",
+        "chance_2": "Owl Post",
+        "chance_3": "Owl Post",
+        "community_chest_1": "Owl Post",
+        "community_chest_2": "Owl Post",
+        "community_chest_3": "Owl Post",
+        "income_tax": "Filch and Mrs. Norris",
+        "luxury_tax": "Filch and Mrs. Norris",
+    },
+    "junior_super_mario": {
+        "chance_1": "Chance",
+        "chance_2": "Chance",
+        "chance_3": "Chance",
+        "community_chest_1": "Chance",
+        "community_chest_2": "Chance",
+        "community_chest_3": "Chance",
+    },
     "jurassic_park": {
         "chance_1": "Impact Tremor",
         "chance_2": "Impact Tremor",
@@ -460,6 +504,14 @@ LONG_TAIL_ACTION_SPACE_NAME_OVERRIDES: dict[str, dict[str, str]] = {
         "community_chest_1": "Cold Storage",
         "community_chest_2": "Cold Storage",
         "community_chest_3": "Cold Storage",
+    },
+    "lord_of_the_rings": {
+        "chance_1": "Quest",
+        "chance_2": "Quest",
+        "chance_3": "Quest",
+        "community_chest_1": "Quest",
+        "community_chest_2": "Quest",
+        "community_chest_3": "Quest",
     },
     "pokemon": {
         "chance_1": "Adventure",
@@ -536,6 +588,10 @@ LONG_TAIL_DECK_METADATA_OVERRIDES: dict[str, dict[str, str]] = {
         "chance": "Dumb Luck",
         "community_chest": "Pouches",
     },
+    "fortnite": {
+        "chance": "Storm",
+        "community_chest": "Loot Chest",
+    },
     "fortnite_collectors": {
         "chance": "Storm",
         "community_chest": "Loot Chest",
@@ -544,9 +600,29 @@ LONG_TAIL_DECK_METADATA_OVERRIDES: dict[str, dict[str, str]] = {
         "chance": "Game Mode",
         "community_chest": "Loot Chest",
     },
+    "game_of_thrones": {
+        "chance": "Chance Cards",
+        "community_chest": "Chance Cards",
+    },
+    "ghostbusters": {
+        "chance": "Roaming Vapor",
+        "community_chest": "Roaming Vapor",
+    },
+    "harry_potter": {
+        "chance": "Owl Post",
+        "community_chest": "Owl Post",
+    },
+    "junior_super_mario": {
+        "chance": "Chance",
+        "community_chest": "Chance",
+    },
     "jurassic_park": {
         "chance": "Impact Tremor",
         "community_chest": "Cold Storage",
+    },
+    "lord_of_the_rings": {
+        "chance": "Quest",
+        "community_chest": "Quest",
     },
     "pokemon": {
         "chance": "Adventure",

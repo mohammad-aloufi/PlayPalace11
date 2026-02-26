@@ -35,7 +35,7 @@
       {
         "position": 2,
         "space_id": "community_chest_1",
-        "name": "Community Chest",
+        "name": "Chance",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -256,7 +256,7 @@
       {
         "position": 17,
         "space_id": "community_chest_2",
-        "name": "Community Chest",
+        "name": "Chance",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -502,7 +502,7 @@
       {
         "position": 33,
         "space_id": "community_chest_3",
-        "name": "Community Chest",
+        "name": "Chance",
         "kind": "community_chest",
         "price": 0,
         "rent": 0,
@@ -1090,6 +1090,10 @@
       "pdf_sha256": "ca71f0c31f8f31cfedecb59aacbf6194e506cf9da022579538a2b9213d950083",
       "pdf_size_bytes": 93910302,
       "page_count": 2
+    },
+    "decks": {
+      "chance": "Chance",
+      "community_chest": "Chance"
     }
   },
   "win_condition": {
@@ -1137,6 +1141,24 @@
       "edition_id": "monopoly-f4817",
       "page_ref": "manual-extract:pypdf",
       "confidence": "high"
+    },
+    {
+      "rule_path": "board.spaces.chance.name",
+      "edition_id": "monopoly-f4817",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "board.spaces.community_chest.name",
+      "edition_id": "monopoly-f4817",
+      "page_ref": "manual-extract:action-space-labels",
+      "confidence": "medium"
+    },
+    {
+      "rule_path": "mechanics.decks",
+      "edition_id": "monopoly-f4817",
+      "page_ref": "manual-extract:deck-labels",
+      "confidence": "medium"
     }
   ]
 }
