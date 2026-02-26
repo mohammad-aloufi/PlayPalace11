@@ -1,5 +1,8 @@
 # Monopoly Manual-Core All Special Boards Implementation Plan
 
+> Status update (2026-02-26): Implementation through executable payload completion is done.  
+> For full done-vs-remaining tracking and the final manual-auth roadmap, see `docs/plans/2026-02-26-monopoly-special-boards-final-part-status.md`.
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Deliver strict manual-cited, full-mechanics Monopoly parity by implementing Mario boards first, then migrating all remaining special boards to manual-core/near-full fidelity.
