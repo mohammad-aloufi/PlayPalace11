@@ -2351,6 +2351,8 @@ class MonopolyGame(ActionGuardMixin, Game):
         elif card_reason_key:
             reason = f"card:{card_reason_key}"
 
+        manual_core = self._is_junior_super_mario_manual_core_active()
+
         if self.cheaters_engine is not None:
             required_outcome = self.cheaters_engine.on_payment_required(
                 player.id,
@@ -2369,7 +2371,7 @@ class MonopolyGame(ActionGuardMixin, Game):
             ):
                 return False
 
-        if self._current_liquid_balance(player) < amount:
+        if not manual_core and self._current_liquid_balance(player) < amount:
             self._liquidate_assets_for_debt(player, amount)
 
         paid = self._debit_player_to_bank(player, amount, reason, allow_partial=True)
@@ -2415,6 +2417,8 @@ class MonopolyGame(ActionGuardMixin, Game):
         if player.bankrupt:
             return False
         if paid < amount:
+            if manual_core:
+                return True
             self._declare_bankrupt(player)
             return False
         return True
@@ -2830,6 +2834,7 @@ class MonopolyGame(ActionGuardMixin, Game):
 
             owner = self.get_player_by_id(owner_id)
             rent_due = self._calculate_rent_due(landed_space, owner_id, dice_total)
+            manual_core = self._is_junior_super_mario_manual_core_active()
             if self.cheaters_engine is not None:
                 required_outcome = self.cheaters_engine.on_payment_required(
                     player.id,
@@ -2847,7 +2852,7 @@ class MonopolyGame(ActionGuardMixin, Game):
                     reason="payment_required",
                 ):
                     return "bankrupt" if player.bankrupt else "resolved"
-            if self._current_liquid_balance(player) < rent_due:
+            if not manual_core and self._current_liquid_balance(player) < rent_due:
                 self._liquidate_assets_for_debt(player, rent_due)
             paid = 0
             if owner and isinstance(owner, MonopolyPlayer):
@@ -2894,6 +2899,8 @@ class MonopolyGame(ActionGuardMixin, Game):
             if player.bankrupt:
                 return "bankrupt"
             if paid < rent_due:
+                if manual_core:
+                    return "resolved"
                 creditor_name = owner.name if owner else "Bank"
                 creditor_id = owner.id if owner and isinstance(owner, MonopolyPlayer) else None
                 self._declare_bankrupt(

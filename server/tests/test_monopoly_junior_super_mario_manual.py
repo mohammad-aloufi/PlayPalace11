@@ -123,3 +123,43 @@ def test_junior_super_mario_no_auction_when_unaffordable(monkeypatch):
     assert "mediterranean_avenue" not in host.owned_space_ids
     assert "mediterranean_avenue" not in game.property_owners
     assert game.turn_pending_purchase_space_id == ""
+
+
+def test_junior_super_mario_rent_partial_pay_does_not_bankrupt(monkeypatch):
+    game = _start_manual_board_game(2)
+    host = game.players[0]
+    guest = game.players[1]
+
+    host.owned_space_ids.append("mediterranean_avenue")
+    game.property_owners["mediterranean_avenue"] = host.id
+    guest.position = 0
+    guest.cash = 1
+    game.turn_index = 1
+    game.turn_has_rolled = False
+    game.turn_pending_purchase_space_id = ""
+
+    rolls = iter([1, 1])  # land on Mediterranean Avenue
+    monkeypatch.setattr("server.games.monopoly.game.random.randint", lambda a, b: next(rolls))
+
+    game.execute_action(guest, "roll_dice")
+
+    assert guest.bankrupt is False
+    assert guest.cash == 0
+    assert host.cash == 21
+
+
+def test_junior_super_mario_card_fee_partial_pay_does_not_bankrupt(monkeypatch):
+    game = _start_manual_board_game(2)
+    host = game.current_player
+    assert host is not None
+
+    host.cash = 1
+    host.position = 0
+    monkeypatch.setattr(game, "_draw_card", lambda deck_type: "doctor_fee_pay_50")
+    rolls = iter([2, 1])  # Community Chest
+    monkeypatch.setattr("server.games.monopoly.game.random.randint", lambda a, b: next(rolls))
+
+    game.execute_action(host, "roll_dice")
+
+    assert host.bankrupt is False
+    assert host.cash == 0
