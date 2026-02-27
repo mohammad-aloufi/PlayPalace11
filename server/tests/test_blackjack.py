@@ -5,6 +5,30 @@ from server.core.users.test_user import MockUser
 from server.game_utils.cards import Card, Deck
 from server.games.blackjack.game import BlackjackGame, BlackjackOptions
 
+BUST_SOUND_SET = {
+    "game_blackjack/bust1.ogg",
+    "game_blackjack/bust2.ogg",
+    "game_blackjack/bust3.ogg",
+}
+DEAL_SOUND_SET = {
+    "game_cards/draw1.ogg",
+    "game_cards/draw2.ogg",
+    "game_cards/draw4.ogg",
+}
+DISCARD_SOUND_SET = {
+    "game_cards/discard1.ogg",
+    "game_cards/discard2.ogg",
+    "game_cards/discard3.ogg",
+}
+SHUFFLE_SOUND_SET = {
+    "game_cards/shuffle1.ogg",
+    "game_cards/shuffle2.ogg",
+    "game_cards/shuffle3.ogg",
+    "game_cards/small_shuffle.ogg",
+}
+PUSH_SOUND = "game_cards/play2.ogg"
+NO_WINNER_SOUND = "game_blackjack/bust3.ogg"
+
 
 def make_card(card_id: int, rank: int, suit: int) -> Card:
     return Card(id=card_id, rank=rank, suit=suit)
@@ -89,7 +113,7 @@ def test_blackjack_hand_value_handles_soft_aces() -> None:
 
 
 def test_blackjack_on_start_deals_and_posts_bets() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     game.options = BlackjackOptions(starting_chips=100, base_bet=10, deck_count=1)
     guest_user = MockUser("Guest")
     guest_player = game.add_player("Guest", guest_user)
@@ -104,6 +128,11 @@ def test_blackjack_on_start_deals_and_posts_bets() -> None:
     assert guest_player.bet == 10
     assert host_player.chips == 90
     assert guest_player.chips == 90
+    sounds = host_user.get_sounds_played()
+    assert "game_3cardpoker/roundstart.ogg" in sounds
+    assert "game_3cardpoker/bet.ogg" in sounds
+    assert any(sound in SHUFFLE_SOUND_SET for sound in sounds)
+    assert any(sound in DEAL_SOUND_SET for sound in sounds)
 
 
 def test_blackjack_on_start_single_player_does_not_end_immediately() -> None:
@@ -139,7 +168,7 @@ def test_blackjack_settle_single_player_continues_when_player_has_chips() -> Non
 
 
 def test_blackjack_hit_bust_advances_turn() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     guest_user = MockUser("Guest")
     guest_player = game.add_player("Guest", guest_user)
 
@@ -160,6 +189,9 @@ def test_blackjack_hit_bust_advances_turn() -> None:
     assert host_player.busted is True
     assert host_player.hand_done is True
     assert game.current_player == guest_player
+    sounds = host_user.get_sounds_played()
+    assert "game_blackjack/hit.ogg" in sounds
+    assert any(sound in BUST_SOUND_SET for sound in sounds)
 
 
 def test_blackjack_split_creates_two_hands() -> None:
@@ -187,7 +219,7 @@ def test_blackjack_split_creates_two_hands() -> None:
 
 
 def test_blackjack_double_down_increases_bet_and_ends_hand() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     guest_user = MockUser("Guest")
     guest_player = game.add_player("Guest", guest_user)
     game.status = "playing"
@@ -207,10 +239,14 @@ def test_blackjack_double_down_increases_bet_and_ends_hand() -> None:
     assert len(host_player.hand) == 3
     assert host_player.hand_done is True
     assert game.current_player == guest_player
+    sounds = host_user.get_sounds_played()
+    assert "game_blackjack/doubledown.ogg" in sounds
+    assert "game_blackjack/hit.ogg" in sounds
+    assert "game_blackjack/stand.ogg" in sounds
 
 
 def test_blackjack_late_surrender_refunds_half_and_advances() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     guest_user = MockUser("Guest")
     guest_player = game.add_player("Guest", guest_user)
     game.status = "playing"
@@ -228,6 +264,90 @@ def test_blackjack_late_surrender_refunds_half_and_advances() -> None:
     assert host_player.surrendered_main is True
     assert host_player.hand_done is True
     assert game.current_player == guest_player
+    assert any(sound in DISCARD_SOUND_SET for sound in host_user.get_sounds_played())
+
+
+def test_blackjack_initial_blackjack_plays_blackjack_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.deck = Deck(
+        cards=[
+            make_card(1, 1, 1),   # host
+            make_card(2, 9, 2),   # dealer up
+            make_card(3, 13, 1),  # host
+            make_card(4, 7, 2),   # dealer hole
+        ]
+    )
+
+    game._deal_initial_cards([host_player])
+
+    assert host_player.has_blackjack is True
+    assert "game_blackjack/blackjack.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_dealer_bust_plays_bust_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.dealer_hand = [make_card(1, 10, 1), make_card(2, 6, 2)]
+    game.deck = Deck(cards=[make_card(3, 10, 3)])
+    game._settle_hand = lambda: None  # type: ignore[method-assign]
+
+    game._play_dealer_turn()
+
+    sounds = host_user.get_sounds_played()
+    assert "game_blackjack/hit.ogg" in sounds
+    assert any(sound in BUST_SOUND_SET for sound in sounds)
+
+
+def test_blackjack_settle_win_plays_win_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+
+    host_player.chips = 90
+    host_player.bet = 10
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 9, 2)]  # 19
+    host_player.hand_done = True
+    game.dealer_hand = [make_card(3, 10, 3), make_card(4, 7, 4)]  # 17
+
+    game._settle_hand()
+
+    assert "game_3cardpoker/winbet.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_settle_blackjack_win_plays_premium_win_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+
+    host_player.chips = 90
+    host_player.bet = 10
+    host_player.hand = [make_card(1, 1, 1), make_card(2, 13, 2)]  # blackjack
+    host_player.has_blackjack = True
+    host_player.hand_done = True
+    game.dealer_hand = [make_card(3, 10, 3), make_card(4, 7, 4)]  # 17
+
+    game._settle_hand()
+
+    assert "game_3cardpoker/win.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_end_game_winner_plays_wingame_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game._end_game(host_player)
+    assert "game_3cardpoker/wingame.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_end_game_no_winner_plays_no_winner_sound() -> None:
+    game, _host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game._end_game(None)
+    assert NO_WINNER_SOUND in host_user.get_sounds_played()
 
 
 def test_blackjack_set_next_bet_between_rounds_updates_future_posted_bet() -> None:
@@ -245,6 +365,7 @@ def test_blackjack_set_next_bet_between_rounds_updates_future_posted_bet() -> No
 
     assert host_player.next_bet == 25
     assert "Base bet set to 25" in (host_user.get_last_spoken() or "")
+    assert "game_3cardpoker/bet.ogg" in host_user.get_sounds_played()
 
     game._post_bets([host_player])
 
@@ -266,7 +387,7 @@ def test_blackjack_set_next_bet_ignored_during_player_phase() -> None:
 
 
 def test_blackjack_insurance_wins_when_dealer_has_blackjack() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     game.status = "playing"
     game.game_active = True
     game.phase = "insurance"
@@ -288,10 +409,32 @@ def test_blackjack_insurance_wins_when_dealer_has_blackjack() -> None:
     host_player.hand_done = True
     game._settle_hand()
     assert host_player.chips == 100
+    assert "game_3cardpoker/winbet.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_insurance_loses_plays_discard_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "insurance"
+    game.set_turn_players([host_player], reset_index=True)
+    game._advance_insurance_to_next_player = lambda: None  # type: ignore[method-assign]
+
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 7, 2)]
+    host_player.bet = 10
+    host_player.chips = 90
+    host_player.insurance_decision_done = False
+    game.dealer_hand = [make_card(10, 1, 3), make_card(11, 9, 4)]
+
+    game._action_take_insurance(host_player, "take_insurance")
+    host_player.hand_done = True
+    game._settle_hand()
+
+    assert any(sound in DISCARD_SOUND_SET for sound in host_user.get_sounds_played())
 
 
 def test_blackjack_even_money_pays_one_to_one() -> None:
-    game, host_player, _host_user = create_game_with_host()
+    game, host_player, host_user = create_game_with_host()
     game.status = "playing"
     game.game_active = True
     game.phase = "insurance"
@@ -309,10 +452,75 @@ def test_blackjack_even_money_pays_one_to_one() -> None:
 
     assert host_player.took_even_money is True
     assert host_player.insurance_decision_done is True
+    assert "game_3cardpoker/bet.ogg" in host_user.get_sounds_played()
 
     host_player.hand_done = True
     game._settle_hand()
     assert host_player.chips == 110
+
+
+def test_blackjack_decline_insurance_plays_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "insurance"
+    game.set_turn_players([host_player], reset_index=True)
+    game._advance_insurance_to_next_player = lambda: None  # type: ignore[method-assign]
+
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 7, 2)]
+    host_player.bet = 10
+    host_player.chips = 90
+    host_player.insurance_decision_done = False
+    game.dealer_hand = [make_card(10, 1, 3), make_card(11, 13, 4)]
+
+    game._action_decline_insurance(host_player, "decline_insurance")
+
+    assert host_player.insurance_decision_done is True
+    assert "game_blackjack/stand.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_reveal_dealer_hand_plays_reveal_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.dealer_hand = [make_card(1, 10, 1), make_card(2, 7, 2)]
+
+    game._reveal_dealer_hand()
+
+    assert game.dealer_hole_revealed is True
+    assert "game_cards/play1.ogg" in host_user.get_sounds_played()
+
+
+def test_blackjack_push_result_plays_push_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+
+    host_player.chips = 90
+    host_player.bet = 10
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 7, 2)]  # 17
+    host_player.hand_done = True
+    game.dealer_hand = [make_card(3, 10, 3), make_card(4, 7, 4)]  # 17
+
+    game._settle_hand()
+
+    assert PUSH_SOUND in host_user.get_sounds_played()
+
+
+def test_blackjack_player_broke_plays_bust_sound() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+
+    host_player.chips = 0
+    host_player.bet = 10
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 6, 2)]  # 16
+    host_player.hand_done = True
+    game.dealer_hand = [make_card(3, 10, 3), make_card(4, 8, 4)]  # 18
+
+    game._settle_hand()
+
+    assert any(sound in BUST_SOUND_SET for sound in host_user.get_sounds_played())
 
 
 def test_blackjack_should_offer_insurance_when_dealer_shows_ace() -> None:

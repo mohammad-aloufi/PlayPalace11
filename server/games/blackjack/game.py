@@ -100,6 +100,40 @@ RULE_PROFILE_PRESETS: dict[str, dict[str, str | bool | int]] = {
     },
 }
 
+SOUND_HIT = "game_blackjack/hit.ogg"
+SOUND_STAND = "game_blackjack/stand.ogg"
+SOUND_DOUBLE_DOWN = "game_blackjack/doubledown.ogg"
+SOUND_BLACKJACK = "game_blackjack/blackjack.ogg"
+SOUND_BUST_VARIANTS = [
+    "game_blackjack/bust1.ogg",
+    "game_blackjack/bust2.ogg",
+    "game_blackjack/bust3.ogg",
+]
+SOUND_DEAL_VARIANTS = [
+    "game_cards/draw1.ogg",
+    "game_cards/draw2.ogg",
+    "game_cards/draw4.ogg",
+]
+SOUND_DISCARD_VARIANTS = [
+    "game_cards/discard1.ogg",
+    "game_cards/discard2.ogg",
+    "game_cards/discard3.ogg",
+]
+SOUND_SHUFFLE_VARIANTS = [
+    "game_cards/shuffle1.ogg",
+    "game_cards/shuffle2.ogg",
+    "game_cards/shuffle3.ogg",
+    "game_cards/small_shuffle.ogg",
+]
+SOUND_BET = "game_3cardpoker/bet.ogg"
+SOUND_ROUND_START = "game_3cardpoker/roundstart.ogg"
+SOUND_REVEAL = "game_cards/play1.ogg"
+SOUND_PUSH = "game_cards/play2.ogg"
+SOUND_WIN_STANDARD = "game_3cardpoker/winbet.ogg"
+SOUND_WIN_BLACKJACK = "game_3cardpoker/win.ogg"
+SOUND_WIN_GAME = "game_3cardpoker/wingame.ogg"
+SOUND_NO_WINNER = "game_blackjack/bust3.ogg"
+
 
 @dataclass
 class BlackjackPlayer(Player):
@@ -803,6 +837,7 @@ class BlackjackGame(Game):
         self.dealer_hole_revealed = False
 
         self.broadcast_l("blackjack-hand-start", hand=self.hand_number)
+        self.play_sound(SOUND_ROUND_START)
         self._ensure_deck(min_cards=len(active_players) * 6)
         self._post_bets(active_players)
         self._deal_initial_cards(active_players)
@@ -814,6 +849,7 @@ class BlackjackGame(Game):
         dealer_blackjack = self.is_blackjack(self.dealer_hand)
         if dealer_blackjack and self.options.dealer_peeks_blackjack:
             self._reveal_dealer_hand()
+            self.play_sound(SOUND_BLACKJACK)
             self.broadcast_l("blackjack-dealer-blackjack")
             self._settle_hand()
             return
@@ -926,6 +962,7 @@ class BlackjackGame(Game):
         dealer_blackjack = self.is_blackjack(self.dealer_hand)
         if dealer_blackjack and self.options.dealer_peeks_blackjack:
             self._reveal_dealer_hand()
+            self.play_sound(SOUND_BLACKJACK)
             self.broadcast_l("blackjack-dealer-blackjack")
             self._settle_hand()
             return
@@ -973,7 +1010,7 @@ class BlackjackGame(Game):
             if not card:
                 break
             self.dealer_hand.append(card)
-            self.play_sound("game_cards/draw3.ogg")
+            self.play_sound(SOUND_HIT)
             self._broadcast_l_with_locale_args(
                 "blackjack-dealer-hits",
                 lambda locale: {
@@ -984,11 +1021,13 @@ class BlackjackGame(Game):
 
         total, is_soft = self.hand_value(self.dealer_hand)
         if total > 21:
+            self._play_bust_sound()
             self._broadcast_l_with_locale_args(
                 "blackjack-dealer-bust",
                 lambda locale: {"total": self._total_text(locale, total, is_soft)},
             )
         else:
+            self.play_sound(SOUND_STAND)
             self._broadcast_l_with_locale_args(
                 "blackjack-dealer-stands",
                 lambda locale: {"total": self._total_text(locale, total, is_soft)},
@@ -1012,7 +1051,7 @@ class BlackjackGame(Game):
             return
 
         hand.append(card)
-        self.play_sound("game_cards/draw3.ogg")
+        self.play_sound(SOUND_HIT)
         self.broadcast_personal_l(
             p,
             "blackjack-you-hit",
@@ -1026,6 +1065,7 @@ class BlackjackGame(Game):
         if not p or self._is_turn_action_enabled(p):
             return
 
+        self.play_sound(SOUND_STAND)
         self._set_current_hand_done(p, done=True, stood=True)
         self.broadcast_personal_l(p, "blackjack-you-stand", "blackjack-player-stands")
         self._advance_to_next_player()
@@ -1042,6 +1082,7 @@ class BlackjackGame(Game):
         refund = bet // 2
         loss = bet - refund
         p.chips += refund
+        self._play_discard_sound()
         self._set_current_surrendered(p, True)
         self._set_current_hand_done(p, done=True, stood=True)
         self._sync_team_scores()
@@ -1066,6 +1107,7 @@ class BlackjackGame(Game):
         self._set_current_bet(p, bet * 2)
         self._set_current_doubled(p, True)
         self._sync_team_scores()
+        self.play_sound(SOUND_DOUBLE_DOWN)
 
         self.broadcast_personal_l(
             p,
@@ -1078,7 +1120,7 @@ class BlackjackGame(Game):
         card = self._draw_card()
         if card:
             hand.append(card)
-            self.play_sound("game_cards/draw3.ogg")
+            self.play_sound(SOUND_HIT)
             self.broadcast_personal_l(
                 p,
                 "blackjack-you-hit",
@@ -1088,6 +1130,7 @@ class BlackjackGame(Game):
 
         total, is_soft = self.hand_value(hand)
         if total > 21:
+            self._play_bust_sound()
             self._set_current_hand_done(p, done=True, busted=True)
             self.broadcast_personal_l(
                 p,
@@ -1096,6 +1139,7 @@ class BlackjackGame(Game):
                 total=self._total_text(self._player_locale(p), total, is_soft),
             )
         else:
+            self.play_sound(SOUND_STAND)
             self._set_current_hand_done(p, done=True, stood=True)
             self.broadcast_personal_l(p, "blackjack-you-stand", "blackjack-player-stands")
         self._advance_to_next_player()
@@ -1133,6 +1177,7 @@ class BlackjackGame(Game):
             p.split_hand.append(split_draw)
 
         self._sync_team_scores()
+        self.play_sound(SOUND_BET)
         self.broadcast_personal_l(
             p,
             "blackjack-you-split",
@@ -1151,6 +1196,7 @@ class BlackjackGame(Game):
             p.stood = True
             p.split_hand_done = True
             p.split_stood = True
+            self.play_sound(SOUND_STAND)
             self.broadcast_personal_l(
                 p,
                 "blackjack-you-split-aces-auto-stand",
@@ -1161,6 +1207,7 @@ class BlackjackGame(Game):
 
         total, _is_soft = self.hand_value(p.hand)
         if total == 21:
+            self.play_sound(SOUND_STAND)
             self._set_current_hand_done(p, done=True, stood=True)
             self.broadcast_personal_l(
                 p,
@@ -1187,6 +1234,7 @@ class BlackjackGame(Game):
         p.insurance_bet = amount
         p.insurance_decision_done = True
         self._sync_team_scores()
+        self.play_sound(SOUND_BET)
         self.broadcast_personal_l(
             p,
             "blackjack-you-take-insurance",
@@ -1202,6 +1250,7 @@ class BlackjackGame(Game):
 
         p.took_even_money = True
         p.insurance_decision_done = True
+        self.play_sound(SOUND_BET)
         self.broadcast_personal_l(
             p,
             "blackjack-you-take-even-money",
@@ -1214,6 +1263,7 @@ class BlackjackGame(Game):
         if not p or self._is_decline_insurance_enabled(p):
             return
         p.insurance_decision_done = True
+        self.play_sound(SOUND_STAND)
         self.broadcast_personal_l(
             p,
             "blackjack-you-decline-insurance",
@@ -1242,6 +1292,7 @@ class BlackjackGame(Game):
             return
 
         p.next_bet = amount
+        self.play_sound(SOUND_BET)
         if user:
             user.speak_l("blackjack-option-changed-base-bet", count=amount)
 
@@ -1598,6 +1649,24 @@ class BlackjackGame(Game):
     def _is_current_hand_locked_after_split_aces(self, player: BlackjackPlayer) -> bool:
         return self.options.split_aces_one_card_only and self._current_hand_from_split_aces(player)
 
+    def _play_bust_sound(self) -> None:
+        self.play_sound(random.choice(SOUND_BUST_VARIANTS))  # nosec B311
+
+    def _play_deal_sound(self) -> None:
+        self.play_sound(random.choice(SOUND_DEAL_VARIANTS))  # nosec B311
+
+    def _play_discard_sound(self) -> None:
+        self.play_sound(random.choice(SOUND_DISCARD_VARIANTS))  # nosec B311
+
+    def _play_shuffle_sound(self) -> None:
+        self.play_sound(random.choice(SOUND_SHUFFLE_VARIANTS))  # nosec B311
+
+    def _play_hand_win_sound(self, *, is_blackjack_win: bool) -> None:
+        if is_blackjack_win:
+            self.play_sound(SOUND_WIN_BLACKJACK)
+            return
+        self.play_sound(SOUND_WIN_STANDARD)
+
     def _set_current_hand_done(
         self,
         player: BlackjackPlayer,
@@ -1749,6 +1818,7 @@ class BlackjackGame(Game):
             return
         self.deck, _ = DeckFactory.standard_deck(num_decks=self.options.deck_count)
         self.deck.shuffle()
+        self._play_shuffle_sound()
 
     def _draw_card(self) -> Card | None:
         self._ensure_deck(min_cards=1)
@@ -1772,6 +1842,7 @@ class BlackjackGame(Game):
         return max(0, bet)
 
     def _post_bets(self, players: list[BlackjackPlayer]) -> None:
+        bet_posted = False
         for player in players:
             if player.chips <= 0:
                 player.bet = 0
@@ -1785,6 +1856,7 @@ class BlackjackGame(Game):
                 continue
             player.chips -= bet
             player.bet = bet
+            bet_posted = True
             self.broadcast_personal_l(
                 player,
                 "blackjack-you-bet",
@@ -1792,9 +1864,13 @@ class BlackjackGame(Game):
                 amount=bet,
             )
 
+        if bet_posted:
+            self.play_sound(SOUND_BET)
+
         self._sync_team_scores()
 
     def _deal_initial_cards(self, players: list[BlackjackPlayer]) -> None:
+        self._play_deal_sound()
         for _ in range(2):
             for player in players:
                 card = self._draw_card()
@@ -1834,6 +1910,7 @@ class BlackjackGame(Game):
                 player.has_blackjack = True
                 player.hand_done = True
                 player.stood = True
+                self.play_sound(SOUND_BLACKJACK)
                 self.broadcast_personal_l(player, "blackjack-you-blackjack", "blackjack-player-blackjack")
 
     def _reveal_dealer_hand(self) -> None:
@@ -1842,6 +1919,7 @@ class BlackjackGame(Game):
         self.dealer_hole_revealed = True
 
         if len(self.dealer_hand) >= 2:
+            self.play_sound(SOUND_REVEAL)
             total, is_soft = self.hand_value(self.dealer_hand)
             self._broadcast_l_with_locale_args(
                 "blackjack-dealer-reveals",
@@ -1915,6 +1993,7 @@ class BlackjackGame(Game):
         hand = self._current_hand(player)
         total, is_soft = self.hand_value(hand)
         if total > 21:
+            self._play_bust_sound()
             self._set_current_hand_done(player, done=True, busted=True)
             self.broadcast_personal_l(
                 player,
@@ -1926,6 +2005,7 @@ class BlackjackGame(Game):
             return
 
         if total == 21:
+            self.play_sound(SOUND_STAND)
             self._set_current_hand_done(player, done=True, stood=True)
             self.broadcast_personal_l(
                 player,
@@ -1955,6 +2035,7 @@ class BlackjackGame(Game):
                 if dealer_blackjack:
                     insurance_profit = player.insurance_bet * 2
                     player.chips += player.insurance_bet * 3
+                    self.play_sound(SOUND_WIN_STANDARD)
                     self.broadcast_personal_l(
                         player,
                         "blackjack-you-insurance-wins",
@@ -1962,6 +2043,7 @@ class BlackjackGame(Game):
                         amount=insurance_profit,
                     )
                 else:
+                    self._play_discard_sound()
                     self.broadcast_personal_l(
                         player,
                         "blackjack-you-insurance-loses",
@@ -2004,12 +2086,18 @@ class BlackjackGame(Game):
                 if is_blackjack and not dealer_blackjack:
                     payout = self._blackjack_total_payout(bet)
                     player.chips += payout
-                    self._broadcast_settle_result(player, hand_index, "win", amount=payout - bet)
+                    self._broadcast_settle_result(
+                        player,
+                        hand_index,
+                        "win",
+                        amount=payout - bet,
+                        is_blackjack_win=True,
+                    )
                 elif dealer_blackjack and not is_blackjack:
                     self._broadcast_settle_result(player, hand_index, "lose", amount=bet)
                 elif dealer_bust or player_total > dealer_total:
                     player.chips += bet * 2
-                    self._broadcast_settle_result(player, hand_index, "win", amount=bet)
+                    self._broadcast_settle_result(player, hand_index, "win", amount=bet, is_blackjack_win=False)
                 elif player_total == dealer_total:
                     player.chips += bet
                     self._broadcast_settle_result(player, hand_index, "push")
@@ -2017,6 +2105,7 @@ class BlackjackGame(Game):
                     self._broadcast_settle_result(player, hand_index, "lose", amount=bet)
 
             if player.chips == 0:
+                self._play_bust_sound()
                 self.broadcast_personal_l(
                     player,
                     "blackjack-you-broke",
@@ -2051,9 +2140,11 @@ class BlackjackGame(Game):
         hand_index: int,
         result: str,
         amount: int | None = None,
+        is_blackjack_win: bool = False,
     ) -> None:
         is_split = player.split_bet > 0
         if result == "even_money":
+            self._play_hand_win_sound(is_blackjack_win=False)
             self.broadcast_personal_l(
                 player,
                 "blackjack-you-even-money-win",
@@ -2062,6 +2153,7 @@ class BlackjackGame(Game):
             )
             return
         if result == "win":
+            self._play_hand_win_sound(is_blackjack_win=is_blackjack_win)
             if is_split:
                 self.broadcast_personal_l(
                     player,
@@ -2095,6 +2187,7 @@ class BlackjackGame(Game):
                     amount=amount or 0,
                 )
             return
+        self.play_sound(SOUND_PUSH)
         if is_split:
             self.broadcast_personal_l(
                 player,
@@ -2123,12 +2216,15 @@ class BlackjackGame(Game):
         self.phase = "finished"
         self.timer.clear()
         if winner:
+            self.play_sound(SOUND_WIN_GAME)
             self.broadcast_personal_l(
                 winner,
                 "blackjack-you-win-game",
                 "blackjack-player-wins-game",
                 chips=winner.chips,
             )
+        else:
+            self.play_sound(SOUND_NO_WINNER)
         self.finish_game()
 
     # ======================================================================
