@@ -52,41 +52,6 @@ DISNEY_MARVEL_LITERAL_TEXT_BOARD_IDS = [
     "marvel_super_villains",
 ]
 
-NATIVE_MARVEL_DECK_ID_OVERRIDES = {
-    "marvel_avengers_legacy": {
-        "chance": [
-            "shield_advance_to_go",
-            "shield_bank_dividend_50",
-            "shield_go_back_three",
-            "shield_go_to_jail",
-            "shield_poor_tax_15",
-        ],
-        "community_chest": [
-            "villains_bank_error_collect_215",
-            "villains_doctor_fee_pay_50",
-            "villains_income_tax_refund_20",
-            "villains_go_to_jail",
-            "villains_jail_release_options",
-        ],
-    },
-    "marvel_flip": {
-        "chance": [
-            "event_advance_to_go",
-            "event_go_to_jail_primary",
-            "event_go_back_three",
-            "event_go_to_jail_secondary",
-            "event_poor_tax_15",
-        ],
-        "community_chest": [
-            "team_up_bank_error_collect_200",
-            "team_up_doctor_fee_pay_50",
-            "team_up_income_tax_refund_20",
-            "team_up_go_to_jail",
-            "team_up_jail_release_options",
-        ],
-    },
-}
-
 
 def _start_game(board_id: str) -> MonopolyGame:
     game = MonopolyGame(
@@ -103,6 +68,35 @@ def _start_game(board_id: str) -> MonopolyGame:
     return game
 
 
+def _canonical_deck_ids(deck_type: str) -> list[str]:
+    if deck_type == "chance":
+        return CHANCE_CARD_IDS
+    if deck_type == "community_chest":
+        return COMMUNITY_CHEST_CARD_IDS
+    raise ValueError(deck_type)
+
+
+def _assert_deck_id_contract(deck_rows: list[dict], deck_type: str) -> None:
+    canonical_ids = _canonical_deck_ids(deck_type)
+    card_ids = [row.get("id") for row in deck_rows]
+
+    assert len(card_ids) == len(canonical_ids)
+    assert all(isinstance(card_id, str) and card_id for card_id in card_ids)
+
+    if card_ids == canonical_ids:
+        return
+
+    legacy_ids = [row.get("legacy_id") for row in deck_rows]
+    assert legacy_ids == canonical_ids
+
+
+def _find_card_row(deck_rows: list[dict], card_id: str) -> dict:
+    row = next((row for row in deck_rows if row.get("id") == card_id), None)
+    if row is not None:
+        return row
+    return next(row for row in deck_rows if row.get("legacy_id") == card_id)
+
+
 @pytest.mark.parametrize("board_id", DISNEY_MARVEL_FAMILY_BOARD_IDS)
 def test_disney_marvel_manual_rule_payload_has_full_card_and_space_baseline(board_id: str):
     rule_set = load_manual_rule_set(board_id)
@@ -110,13 +104,10 @@ def test_disney_marvel_manual_rule_payload_has_full_card_and_space_baseline(boar
     spaces = rule_set.board.get("spaces", [])
     chance_rows = rule_set.cards.get("chance", [])
     community_rows = rule_set.cards.get("community_chest", [])
-    deck_override = NATIVE_MARVEL_DECK_ID_OVERRIDES.get(board_id, {})
-    expected_chance_ids = deck_override.get("chance", CHANCE_CARD_IDS)
-    expected_community_ids = deck_override.get("community_chest", COMMUNITY_CHEST_CARD_IDS)
 
     assert len(spaces) == 40
-    assert [row["id"] for row in chance_rows] == expected_chance_ids
-    assert [row["id"] for row in community_rows] == expected_community_ids
+    _assert_deck_id_contract(chance_rows, "chance")
+    _assert_deck_id_contract(community_rows, "community_chest")
 
 
 @pytest.mark.parametrize(
@@ -130,7 +121,8 @@ def test_disney_marvel_manual_rule_payload_has_full_card_and_space_baseline(boar
         ("marvel_80_years", "bank_dividend_50", 92),
         ("marvel_avengers", "bank_error_collect_200", 220),
         ("marvel_black_panther_wf", "income_tax_refund_20", 70),
-        ("marvel_avengers_legacy", "villains_bank_error_collect_215", 215),
+        ("marvel_avengers_legacy", "bank_error_collect_200", 215),
+        ("marvel_avengers_legacy", "doctor_fee_pay_50", 215),
         ("marvel_eternals", "bank_dividend_50", 85),
     ],
 )
@@ -141,7 +133,7 @@ def test_disney_marvel_manual_rule_payload_encodes_card_amount_overrides(
 ):
     rule_set = load_manual_rule_set(board_id)
     rows = rule_set.cards.get("chance", []) + rule_set.cards.get("community_chest", [])
-    row = next(row for row in rows if row.get("id") == card_id)
+    row = _find_card_row(rows, card_id)
     effect = row.get("effect", {})
 
     assert effect.get("amount") == expected_amount
@@ -242,7 +234,7 @@ def test_disney_marvel_manual_rule_payload_includes_literal_card_text(
 ) -> None:
     rule_set = load_manual_rule_set(board_id)
     deck_rows = rule_set.cards.get(deck_type, [])
-    row = next(row for row in deck_rows if row.get("id") == card_id)
+    row = _find_card_row(deck_rows, card_id)
     literal_text = row.get("text")
     assert isinstance(literal_text, str)
     assert expected_substring in literal_text
@@ -264,7 +256,7 @@ def test_disney_marvel_manual_rule_payload_includes_literal_card_text_for_disney
 ) -> None:
     rule_set = load_manual_rule_set("disney_princesses")
     deck_rows = rule_set.cards.get(deck_type, [])
-    row = next(row for row in deck_rows if row.get("id") == card_id)
+    row = _find_card_row(deck_rows, card_id)
     literal_text = row.get("text")
     assert isinstance(literal_text, str)
     assert expected_substring in literal_text
@@ -286,7 +278,7 @@ def test_disney_marvel_manual_rule_payload_includes_literal_card_text_for_disney
 ) -> None:
     rule_set = load_manual_rule_set("disney_the_edition")
     deck_rows = rule_set.cards.get(deck_type, [])
-    row = next(row for row in deck_rows if row.get("id") == card_id)
+    row = _find_card_row(deck_rows, card_id)
     literal_text = row.get("text")
     assert isinstance(literal_text, str)
     assert expected_substring in literal_text.lower()

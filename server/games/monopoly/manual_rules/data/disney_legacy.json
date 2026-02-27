@@ -989,86 +989,96 @@
   "cards": {
     "chance": [
       {
-        "id": "advance_to_go",
+        "id": "show_time_advance_to_go",
         "text_key": "monopoly-card-advance-to-go",
         "effect": {
           "type": "move_absolute",
           "position": 0,
           "collect_pass_go": true
         },
-        "text": "Advance to GO. Collect 200."
+        "text": "Advance to GO. Collect 200.",
+        "legacy_id": "advance_to_go"
       },
       {
-        "id": "bank_dividend_50",
+        "id": "show_time_bank_dividend_50",
         "text_key": "monopoly-card-bank-dividend-50",
         "effect": {
           "type": "credit",
           "amount": 50
-        }
+        },
+        "legacy_id": "bank_dividend_50"
       },
       {
-        "id": "go_back_three",
+        "id": "show_time_go_back_three",
         "text_key": "monopoly-card-go-back-three",
         "effect": {
           "type": "move_relative",
           "steps": -3,
           "collect_pass_go": false
-        }
+        },
+        "legacy_id": "go_back_three"
       },
       {
-        "id": "go_to_jail",
+        "id": "show_time_go_to_jail",
         "text_key": "monopoly-card-go-to-jail",
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Move your token to the In Jail space immediately. Do not collect 200 for passing GO."
+        "text": "Move your token to the In Jail space immediately. Do not collect 200 for passing GO.",
+        "legacy_id": "go_to_jail"
       },
       {
-        "id": "poor_tax_15",
+        "id": "show_time_poor_tax_15",
         "text_key": "monopoly-card-poor-tax-15",
         "effect": {
           "type": "debit",
           "amount": 15
-        }
+        },
+        "legacy_id": "poor_tax_15"
       }
     ],
     "community_chest": [
       {
-        "id": "bank_error_collect_200",
+        "id": "magic_moments_bank_error_collect_200",
         "text_key": "monopoly-card-bank-error-200",
         "effect": {
           "type": "credit",
           "amount": 210
-        }
+        },
+        "legacy_id": "bank_error_collect_200"
       },
       {
-        "id": "doctor_fee_pay_50",
+        "id": "magic_moments_doctor_fee_pay_50",
         "text_key": "monopoly-card-doctor-fee-50",
         "effect": {
           "type": "debit",
           "amount": 50
-        }
+        },
+        "legacy_id": "doctor_fee_pay_50"
       },
       {
-        "id": "income_tax_refund_20",
+        "id": "magic_moments_income_tax_refund_20",
         "text_key": "monopoly-card-tax-refund-20",
         "effect": {
           "type": "credit",
           "amount": 20
-        }
+        },
+        "legacy_id": "income_tax_refund_20"
       },
       {
-        "id": "go_to_jail",
+        "id": "magic_moments_go_to_jail",
         "text_key": "monopoly-card-go-to-jail",
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Move your token to the In Jail space immediately. Do not collect 200 for passing GO."
+        "text": "Move your token to the In Jail space immediately. Do not collect 200 for passing GO.",
+        "legacy_id": "go_to_jail"
       },
       {
-        "id": "get_out_of_jail_free",
+        "id": "magic_moments_get_out_of_jail_free",
         "text_key": "monopoly-card-get-out-of-jail",
-        "text": "Use a Get Out of Jail Free card at the start of your next turn if you have one (or buy one from another player)."
+        "text": "Use a Get Out of Jail Free card at the start of your next turn if you have one (or buy one from another player).",
+        "legacy_id": "get_out_of_jail_free"
       }
     ]
   },

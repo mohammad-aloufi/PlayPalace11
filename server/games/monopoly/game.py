@@ -2431,6 +2431,30 @@ class MonopolyGame(ActionGuardMixin, Game):
             return False
         return True
 
+    def _resolve_manual_deck_native_card_id(self, deck_type: str, card_id: str) -> str:
+        """Resolve canonical compatibility card ids to native manual deck ids by index."""
+        manual_deck_ids = self._manual_deck_ids(deck_type)
+        if not manual_deck_ids:
+            return card_id
+        if card_id in manual_deck_ids:
+            return card_id
+
+        canonical_ids: list[str]
+        if deck_type == "chance":
+            canonical_ids = CHANCE_CARD_IDS
+        elif deck_type == "community_chest":
+            canonical_ids = COMMUNITY_CHEST_CARD_IDS
+        else:
+            return card_id
+
+        if len(manual_deck_ids) != len(canonical_ids):
+            return card_id
+        try:
+            card_index = canonical_ids.index(card_id)
+        except ValueError:
+            return card_id
+        return manual_deck_ids[card_index]
+
     def _resolve_board_card_id(self, deck_type: str, card_id: str) -> str:
         """Resolve board-specific remap for one drawn card id."""
         if self.active_board_effective_mode != "board_rules":
@@ -2443,8 +2467,9 @@ class MonopolyGame(ActionGuardMixin, Game):
         if not rule_pack_id:
             return card_id
         if not supports_capability(rule_pack_id, "card_id_remap"):
-            return card_id
-        return get_card_id_remap(rule_pack_id, deck_type, card_id)
+            return self._resolve_manual_deck_native_card_id(deck_type, card_id)
+        remapped_card_id = get_card_id_remap(rule_pack_id, deck_type, card_id)
+        return self._resolve_manual_deck_native_card_id(deck_type, remapped_card_id)
 
     def _resolve_board_card_cash(self, card_id: str, default_amount: int) -> int:
         """Resolve board-specific card cash override when active."""

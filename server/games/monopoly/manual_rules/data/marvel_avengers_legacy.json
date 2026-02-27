@@ -998,7 +998,8 @@
         },
         "text_status": "not_observed_in_available_manual_sources",
         "text_note": "Native S.H.I.E.L.D. card id retained for manual deck modeling; no literal per-card line for this specific effect id was recovered from official B0323 manuals.",
-        "text_evidence": "Collect power by passing GO and from Chance and Community Chest cards."
+        "text_evidence": "Collect power by passing GO and from Chance and Community Chest cards.",
+        "legacy_id": "advance_to_go"
       },
       {
         "id": "shield_bank_dividend_50",
@@ -1006,7 +1007,8 @@
         "effect": {
           "type": "credit",
           "amount": 50
-        }
+        },
+        "legacy_id": "bank_dividend_50"
       },
       {
         "id": "shield_go_back_three",
@@ -1015,7 +1017,8 @@
           "type": "move_relative",
           "steps": -3,
           "collect_pass_go": false
-        }
+        },
+        "legacy_id": "go_back_three"
       },
       {
         "id": "shield_go_to_jail",
@@ -1023,7 +1026,8 @@
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Go directly to Jail. Do not pass GO."
+        "text": "Go directly to Jail. Do not pass GO.",
+        "legacy_id": "go_to_jail"
       },
       {
         "id": "shield_poor_tax_15",
@@ -1031,7 +1035,8 @@
         "effect": {
           "type": "debit",
           "amount": 15
-        }
+        },
+        "legacy_id": "poor_tax_15"
       }
     ],
     "community_chest": [
@@ -1041,15 +1046,17 @@
         "effect": {
           "type": "credit",
           "amount": 215
-        }
+        },
+        "legacy_id": "bank_error_collect_200"
       },
       {
         "id": "villains_doctor_fee_pay_50",
-        "text_key": "monopoly-card-doctor-fee-50",
+        "text_key": "monopoly-card-bank-error-200",
         "effect": {
-          "type": "debit",
-          "amount": 50
-        }
+          "type": "credit",
+          "amount": 215
+        },
+        "legacy_id": "doctor_fee_pay_50"
       },
       {
         "id": "villains_income_tax_refund_20",
@@ -1057,7 +1064,8 @@
         "effect": {
           "type": "credit",
           "amount": 20
-        }
+        },
+        "legacy_id": "income_tax_refund_20"
       },
       {
         "id": "villains_go_to_jail",
@@ -1065,7 +1073,8 @@
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Go directly to Jail. Do not pass GO."
+        "text": "Go directly to Jail. Do not pass GO.",
+        "legacy_id": "go_to_jail"
       },
       {
         "id": "villains_jail_release_options",
@@ -1075,7 +1084,8 @@
         },
         "text_status": "not_observed_in_available_manual_sources",
         "text_note": "Native Villains card id retained for manual deck modeling; official B0323 manual describes jail-release flow but does not show a literal matching card line.",
-        "text_evidence": "How do I get out of Jail?"
+        "text_evidence": "How do I get out of Jail?",
+        "legacy_id": "get_out_of_jail_free"
       }
     ]
   },

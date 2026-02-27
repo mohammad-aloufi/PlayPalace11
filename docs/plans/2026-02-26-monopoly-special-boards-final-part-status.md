@@ -137,8 +137,11 @@ Head: `98c6150` (plus working-tree updates)
   - Native manual deck-id modeling is now active for the two remaining Marvel boards:
     - `marvel_avengers_legacy`: `shield_*` and `villains_*` card ids
     - `marvel_flip`: `event_*` and `team_up_*` card ids
+  - Native manual deck-id modeling has now been expanded across the full Disney/Marvel family rollout boards via deck-name-prefixed ids plus `legacy_id` compatibility aliases.
   - Legacy canonical ids remain backward compatible via board rule remaps.
+  - Runtime now resolves canonical compatibility ids to native deck ids by canonical card-slot index when board-specific manual decks are active.
   - Card-draw announcements now use `mechanics.decks` labels (for example `S.H.I.E.L.D.`, `Villains`, `Event`, `Team-Up`) instead of hardcoded `Chance`/`Community Chest` labels.
+  - Option-2 kick-off: started replacing synthesized effects with manual-evidenced native effects by promoting `marvel_avengers_legacy` Villains slot-2 (`legacy_id=doctor_fee_pay_50`) to the board's verified `+215` credit outcome directly in native payload data.
 - Remaining boards without deck-label seeding: `0` (all `55` covered)
 
 ## What Has Been Done (Whole Rollout to Date)

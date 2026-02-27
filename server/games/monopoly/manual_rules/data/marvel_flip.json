@@ -998,7 +998,8 @@
         },
         "text_status": "not_observed_in_available_manual_sources",
         "text_note": "Native Event card id retained for manual deck modeling; official F9931 manual text surfaces Event/Team-Up deck mechanics but no literal matching card line for this specific effect id.",
-        "text_evidence": "16 Location Cards * 16 Team-Up Cards * 16 Event Cards"
+        "text_evidence": "16 Location Cards * 16 Team-Up Cards * 16 Event Cards",
+        "legacy_id": "advance_to_go"
       },
       {
         "id": "event_go_to_jail_primary",
@@ -1006,7 +1007,8 @@
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP."
+        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP.",
+        "legacy_id": "bank_dividend_50"
       },
       {
         "id": "event_go_back_three",
@@ -1015,7 +1017,8 @@
           "type": "move_relative",
           "steps": -3,
           "collect_pass_go": false
-        }
+        },
+        "legacy_id": "go_back_three"
       },
       {
         "id": "event_go_to_jail_secondary",
@@ -1023,7 +1026,8 @@
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP."
+        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP.",
+        "legacy_id": "go_to_jail"
       },
       {
         "id": "event_poor_tax_15",
@@ -1031,7 +1035,8 @@
         "effect": {
           "type": "debit",
           "amount": 15
-        }
+        },
+        "legacy_id": "poor_tax_15"
       }
     ],
     "community_chest": [
@@ -1041,7 +1046,8 @@
         "effect": {
           "type": "credit",
           "amount": 200
-        }
+        },
+        "legacy_id": "bank_error_collect_200"
       },
       {
         "id": "team_up_doctor_fee_pay_50",
@@ -1049,7 +1055,8 @@
         "effect": {
           "type": "debit",
           "amount": 50
-        }
+        },
+        "legacy_id": "doctor_fee_pay_50"
       },
       {
         "id": "team_up_income_tax_refund_20",
@@ -1057,7 +1064,8 @@
         "effect": {
           "type": "credit",
           "amount": 20
-        }
+        },
+        "legacy_id": "income_tax_refund_20"
       },
       {
         "id": "team_up_go_to_jail",
@@ -1065,7 +1073,8 @@
         "effect": {
           "type": "go_to_jail"
         },
-        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP."
+        "text": "Move your token to the In Jail space immediately. Do not pass GO. Do not collect 2 BP.",
+        "legacy_id": "go_to_jail"
       },
       {
         "id": "team_up_jail_release_options",
@@ -1075,7 +1084,8 @@
         },
         "text_status": "not_observed_in_available_manual_sources",
         "text_note": "Native Team-Up card id retained for manual deck modeling; official F9931 jail rules describe pay-or-roll release flow but do not list a literal matching card line.",
-        "text_evidence": "You have 2 options: pay BP or roll the numbered die to get out of Jail."
+        "text_evidence": "You have 2 options: pay BP or roll the numbered die to get out of Jail.",
+        "legacy_id": "get_out_of_jail_free"
       }
     ]
   },

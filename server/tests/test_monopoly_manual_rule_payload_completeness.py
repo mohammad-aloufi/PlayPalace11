@@ -11,40 +11,16 @@ ALL_SPECIAL_BOARD_IDS = sorted(
     board_id for board_id in BOARD_PROFILES if board_id != DEFAULT_BOARD_ID
 )
 
-DECK_ID_OVERRIDES = {
-    "marvel_avengers_legacy": {
-        "chance": [
-            "shield_advance_to_go",
-            "shield_bank_dividend_50",
-            "shield_go_back_three",
-            "shield_go_to_jail",
-            "shield_poor_tax_15",
-        ],
-        "community_chest": [
-            "villains_bank_error_collect_215",
-            "villains_doctor_fee_pay_50",
-            "villains_income_tax_refund_20",
-            "villains_go_to_jail",
-            "villains_jail_release_options",
-        ],
-    },
-    "marvel_flip": {
-        "chance": [
-            "event_advance_to_go",
-            "event_go_to_jail_primary",
-            "event_go_back_three",
-            "event_go_to_jail_secondary",
-            "event_poor_tax_15",
-        ],
-        "community_chest": [
-            "team_up_bank_error_collect_200",
-            "team_up_doctor_fee_pay_50",
-            "team_up_income_tax_refund_20",
-            "team_up_go_to_jail",
-            "team_up_jail_release_options",
-        ],
-    },
-}
+def _assert_deck_id_contract(deck_rows: list[dict], canonical_ids: list[str]) -> None:
+    deck_ids = [row.get("id") for row in deck_rows]
+    assert len(deck_ids) == len(canonical_ids)
+    assert all(isinstance(deck_id, str) and deck_id for deck_id in deck_ids)
+
+    if deck_ids == canonical_ids:
+        return
+
+    legacy_ids = [row.get("legacy_id") for row in deck_rows]
+    assert legacy_ids == canonical_ids
 
 
 @pytest.mark.parametrize("board_id", ALL_SPECIAL_BOARD_IDS)
@@ -56,14 +32,11 @@ def test_all_special_boards_have_executable_manual_payload(board_id: str):
     chest_rows = rule_set.cards.get("community_chest", [])
     mechanics = rule_set.mechanics
     citation_paths = {citation.rule_path for citation in rule_set.citations}
-    deck_override = DECK_ID_OVERRIDES.get(board_id, {})
-    expected_chance_ids = deck_override.get("chance", CHANCE_CARD_IDS)
-    expected_chest_ids = deck_override.get("community_chest", COMMUNITY_CHEST_CARD_IDS)
 
     assert isinstance(spaces, list)
     assert len(spaces) == 40
-    assert [row.get("id") for row in chance_rows] == expected_chance_ids
-    assert [row.get("id") for row in chest_rows] == expected_chest_ids
+    _assert_deck_id_contract(chance_rows, CHANCE_CARD_IDS)
+    _assert_deck_id_contract(chest_rows, COMMUNITY_CHEST_CARD_IDS)
 
     assert mechanics.get("mode") != "manual_core_candidate"
     source = mechanics.get("manual_source", {})
