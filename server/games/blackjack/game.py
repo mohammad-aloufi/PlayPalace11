@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from ..base import Game, GameOptions, Player
 from ..registry import register_game
-from ...game_utils.actions import Action, ActionSet, Visibility
+from ...game_utils.actions import Action, ActionSet, EditboxInput, Visibility
 from ...game_utils.bot_helper import BotHelper
 from ...game_utils.cards import Card, Deck, DeckFactory, card_name, read_cards
 from ...game_utils.game_result import GameResult, PlayerResult
@@ -106,6 +106,7 @@ class BlackjackPlayer(Player):
     hand: list[Card] = field(default_factory=list)
     chips: int = 0
     bet: int = 0
+    next_bet: int = 0
     hand_done: bool = False
     stood: bool = False
     busted: bool = False
@@ -506,6 +507,22 @@ class BlackjackGame(Game):
             return "action-not-playing"
         return None
 
+    def _is_set_next_bet_enabled(self, player: Player) -> str | None:
+        if self.status != "playing":
+            return "action-not-playing"
+        if player.is_spectator:
+            return "action-spectator"
+        if not isinstance(player, BlackjackPlayer):
+            return "action-not-available"
+        if not self._is_between_hands():
+            return "action-not-available"
+        return None
+
+    def _is_set_next_bet_hidden(self, player: Player) -> Visibility:
+        if self._is_set_next_bet_enabled(player) is None:
+            return Visibility.VISIBLE
+        return Visibility.HIDDEN
+
     def _is_check_hidden(self, player: Player) -> Visibility:
         return Visibility.HIDDEN
 
@@ -599,6 +616,19 @@ class BlackjackGame(Game):
 
         local_actions = [
             Action(
+                id="set_next_bet",
+                label=Localization.get(locale, "blackjack-set-base-bet", count=self.options.base_bet),
+                handler="_action_set_next_bet",
+                is_enabled="_is_set_next_bet_enabled",
+                is_hidden="_is_set_next_bet_hidden",
+                get_label="_get_set_next_bet_label",
+                input_request=EditboxInput(
+                    prompt="blackjack-enter-base-bet",
+                    default="",
+                    bot_input="_bot_input_set_next_bet",
+                ),
+            ),
+            Action(
                 id="read_hand",
                 label=Localization.get(locale, "blackjack-read-hand"),
                 handler="_action_read_hand",
@@ -649,6 +679,7 @@ class BlackjackGame(Game):
         self.define_keybind("d", "Double down", ["double_down"], state=KeybindState.ACTIVE)
         self.define_keybind("p", "Split", ["split"], state=KeybindState.ACTIVE)
         self.define_keybind("u", "Surrender", ["surrender"], state=KeybindState.ACTIVE)
+        self.define_keybind("b", "Set next bet", ["set_next_bet"], state=KeybindState.ACTIVE)
         self.define_keybind("i", "Insurance", ["take_insurance"], state=KeybindState.ACTIVE)
         self.define_keybind("n", "Decline insurance", ["decline_insurance"], state=KeybindState.ACTIVE)
         self.define_keybind("m", "Even money", ["even_money"], state=KeybindState.ACTIVE)
@@ -676,6 +707,7 @@ class BlackjackGame(Game):
         for player in active:
             if isinstance(player, BlackjackPlayer):
                 player.chips = self.options.starting_chips
+                player.next_bet = self._clamp_table_bet(self.options.base_bet)
 
         self._sync_team_scores()
         self.play_music("game_3cardpoker/mus.ogg")
@@ -1189,6 +1221,30 @@ class BlackjackGame(Game):
         )
         self._advance_insurance_to_next_player()
 
+    def _action_set_next_bet(self, player: Player, amount_str: str, action_id: str) -> None:
+        p = player if isinstance(player, BlackjackPlayer) else None
+        if not p or self._is_set_next_bet_enabled(p):
+            return
+
+        try:
+            amount = int(amount_str)
+        except ValueError:
+            return
+
+        user = self.get_user(p)
+        if amount < self.options.table_min_bet:
+            if user:
+                user.speak_l("blackjack-error-bet-below-min")
+            return
+        if amount > self.options.table_max_bet:
+            if user:
+                user.speak_l("blackjack-error-bet-above-max")
+            return
+
+        p.next_bet = amount
+        if user:
+            user.speak_l("blackjack-option-changed-base-bet", count=amount)
+
     # ======================================================================
     # Status / read actions
     # ======================================================================
@@ -1363,6 +1419,21 @@ class BlackjackGame(Game):
     def _action_check_scores(self, player: Player, action_id: str) -> None:
         self._suppress_keybind_rebuild(player)
         super()._action_check_scores(player, action_id)
+
+    def _bot_input_set_next_bet(self, player: Player) -> str:
+        p = player if isinstance(player, BlackjackPlayer) else None
+        if not p:
+            return str(self._clamp_table_bet(self.options.base_bet))
+        return str(self._effective_next_bet(p))
+
+    def _get_set_next_bet_label(self, player: Player, action_id: str) -> str:
+        user = self.get_user(player)
+        locale = user.locale if user else "en"
+        if isinstance(player, BlackjackPlayer):
+            amount = self._effective_next_bet(player)
+        else:
+            amount = self._clamp_table_bet(self.options.base_bet)
+        return Localization.get(locale, "blackjack-set-base-bet", count=amount)
 
     # ======================================================================
     # Helpers
@@ -1683,6 +1754,23 @@ class BlackjackGame(Game):
         self._ensure_deck(min_cards=1)
         return self.deck.draw_one() if self.deck else None
 
+    def _is_between_hands(self) -> bool:
+        return self.phase == "settle" and self.next_hand_wait_ticks > 0
+
+    def _clamp_table_bet(self, amount: int) -> int:
+        return max(self.options.table_min_bet, min(amount, self.options.table_max_bet))
+
+    def _effective_next_bet(self, player: BlackjackPlayer) -> int:
+        chosen_bet = player.next_bet if player.next_bet > 0 else self.options.base_bet
+        return self._clamp_table_bet(chosen_bet)
+
+    def _posted_bet_for_player(self, player: BlackjackPlayer) -> int:
+        desired_bet = self._effective_next_bet(player)
+        bet = min(player.chips, desired_bet)
+        if player.chips >= self.options.table_min_bet and bet < self.options.table_min_bet:
+            bet = self.options.table_min_bet
+        return max(0, bet)
+
     def _post_bets(self, players: list[BlackjackPlayer]) -> None:
         for player in players:
             if player.chips <= 0:
@@ -1690,9 +1778,7 @@ class BlackjackGame(Game):
                 player.hand_done = True
                 continue
 
-            bet = min(player.chips, self.options.base_bet, self.options.table_max_bet)
-            if player.chips >= self.options.table_min_bet and bet < self.options.table_min_bet:
-                bet = self.options.table_min_bet
+            bet = self._posted_bet_for_player(player)
             if bet <= 0:
                 player.bet = 0
                 player.hand_done = True

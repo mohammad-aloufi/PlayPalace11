@@ -230,6 +230,41 @@ def test_blackjack_late_surrender_refunds_half_and_advances() -> None:
     assert game.current_player == guest_player
 
 
+def test_blackjack_set_next_bet_between_rounds_updates_future_posted_bet() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "settle"
+    game.next_hand_wait_ticks = 20
+    game.options.table_min_bet = 5
+    game.options.table_max_bet = 100
+
+    host_player.chips = 90
+
+    game._action_set_next_bet(host_player, "25", "set_next_bet")
+
+    assert host_player.next_bet == 25
+    assert "Base bet set to 25" in (host_user.get_last_spoken() or "")
+
+    game._post_bets([host_player])
+
+    assert host_player.bet == 25
+    assert host_player.chips == 65
+
+
+def test_blackjack_set_next_bet_ignored_during_player_phase() -> None:
+    game, host_player, _host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+    game.set_turn_players([host_player], reset_index=True)
+
+    host_player.next_bet = 10
+    game._action_set_next_bet(host_player, "40", "set_next_bet")
+
+    assert host_player.next_bet == 10
+
+
 def test_blackjack_insurance_wins_when_dealer_has_blackjack() -> None:
     game, host_player, _host_user = create_game_with_host()
     game.status = "playing"
@@ -689,6 +724,7 @@ def test_blackjack_persistence_round_trip_preserves_new_state_and_reconnect() ->
     host_player.split_from_split_aces = True
     host_player.surrendered_main = False
     host_player.surrendered_split = False
+    host_player.next_bet = 40
 
     payload = game.to_json()
     loaded = BlackjackGame.from_json(payload)
@@ -714,6 +750,7 @@ def test_blackjack_persistence_round_trip_preserves_new_state_and_reconnect() ->
     assert loaded_host.main_from_split_aces is True
     assert loaded_host.split_from_split_aces is True
     assert loaded_host.split_has_blackjack is True
+    assert loaded_host.next_bet == 40
     assert loaded.current_player == loaded_host
 
     loaded._action_read_rules(loaded_host, "read_rules")
