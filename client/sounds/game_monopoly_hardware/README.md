@@ -25,26 +25,29 @@ Installed `original/` assets (runtime currently prefers these):
 
 - `game_monopoly_hardware/original/play_theme.ogg`
   - Event: `play_theme`
-  - Source: `https://opengameart.org/content/50-rpg-sound-effects`
-  - Direct file: `https://opengameart.org/sites/default/files/RPGsounds_Kenney.zip` (`OGG/metalClick.ogg`)
-  - Author: Kenney
-  - License: CC0
-  - SHA256: `9851a69d0c613e13bceef08060ecc4148f098ef487927cbebe270d642398a3b3`
+  - Source: `https://opengameart.org/content/fanfares`
+  - Direct file: `https://opengameart.org/sites/default/files/TITLE%20BOUT_0.ogg`
+  - Author: Spring Spring
+  - License: CC-BY 4.0 / CC-BY 3.0 / CC-BY-SA 4.0 / CC-BY-SA 3.0 (asset page offers multiple; project uses attribution model)
+  - SHA256: `657f76c74d869ff935837a03e3b33d81f31056f1d67eeddf906bee53095369df`
 
 - `game_monopoly_hardware/original/star_wars_theme.ogg`
   - Event: `star_wars_theme`
-  - Source: `https://opengameart.org/content/space-theme`
-  - Direct file: `https://opengameart.org/sites/default/files/spacetheme.ogg`
-  - Author: JSKNYC
-  - License: CC-BY 3.0
-  - SHA256: `9cc03e44e80bbdda67de60db9dcfb5ede60f45940a274fa85a1cd6cbafa8e57a`
+  - Source: `https://opengameart.org/content/fanfares`
+  - Direct file: `https://opengameart.org/sites/default/files/WIN_AGAINST_CHAMPION_0.ogg`
+  - Author: Spring Spring
+  - License: CC-BY 4.0 / CC-BY 3.0 / CC-BY-SA 4.0 / CC-BY-SA 3.0 (asset page offers multiple; project uses attribution model)
+  - SHA256: `6af3e4d45e22c2b2e46d4fbb04ea3e691c1991f2199eef50283f5918c87b7766`
 
 - `game_monopoly_hardware/original/junior_coin_sound_powerup.ogg`
   - Event: `junior_coin_sound_powerup`
-  - Source: `https://commons.wikimedia.org/wiki/File:Coins_dropped_in_metallic_moneybox.ogg`
-  - Direct file: `https://commons.wikimedia.org/wiki/Special:FilePath/Coins_dropped_in_metallic_moneybox.ogg`
-  - License: Public domain
-  - SHA256: `4730ef7a3494bcebeab02f3d452afdca62edb4d9e5c7acdd530cde1dbb0f58b5`
+  - Source: `https://opengameart.org/content/8-bit-sound-effects-library`
+  - Direct file (pack): `https://opengameart.org/sites/default/files/8-Bit%20Sound%20Library.zip`
+  - Original member: `8-Bit Sound Library/Mp3/Collect_Point_00.mp3`
+  - Conversion: transcoded MP3 -> OGG via `sox` for client runtime compatibility
+  - Author: Little Robot Sound Factory
+  - License: CC-BY 3.0
+  - SHA256: `0039874caa6da78fcfc846505b11243254ff8cebca02fd1509810a7a16673a79`
 
 ## Mapping
 

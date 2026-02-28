@@ -51,9 +51,9 @@ Head: tracked via git history on `monopoly`
 ## New Progress: Sourced Stand-In Hardware Audio Assets
 
 - Added runtime-preferred stand-in assets under `client/sounds/game_monopoly_hardware/original/`:
-  - `play_theme.ogg` (Kenney CC0 pack: `RPGsounds_Kenney.zip`, file `OGG/metalClick.ogg`)
-  - `star_wars_theme.ogg` (OpenGameArt `space-theme`, CC-BY 3.0, author JSKNYC)
-  - `junior_coin_sound_powerup.ogg` (Wikimedia Commons public-domain coin sound)
+  - `play_theme.ogg` (OpenGameArt `fanfares`, `TITLE BOUT_0.ogg`, author Spring Spring)
+  - `star_wars_theme.ogg` (OpenGameArt `fanfares`, `WIN_AGAINST_CHAMPION_0.ogg`, author Spring Spring)
+  - `junior_coin_sound_powerup.ogg` (OpenGameArt `8-bit-sound-effects-library`, `Collect_Point_00.mp3` transcoded to OGG, author Little Robot Sound Factory)
 - Resolver behavior now actively uses `original/` assets when present and falls back to placeholders when absent.
 - Provenance, source URLs, licenses, and SHA256 hashes are recorded in:
   - `client/sounds/game_monopoly_hardware/README.md`

@@ -15,7 +15,8 @@ Branch: `monopoly`
 1. All tracked special boards are now promoted to `manual_core`.
 2. Legacy-slot promotion policy remains explicit for image-heavy literal card text on `marvel_avengers_legacy` and `marvel_flip` (with OCR-backed evidence notes).
 3. Junior Super Mario now emits deterministic coin-sound hardware events in `sound_mode=emulated`; Monopoly hardware runtime now prefers sourced `original/` stand-ins with placeholder fallback (`play_theme`, `star_wars_theme`, `junior_coin_sound_powerup`).
-4. Source provenance, license notes, and checksums for stand-in originals are documented in `client/sounds/game_monopoly_hardware/README.md`.
+4. Stand-ins were refreshed toward board-style cues (short fanfare pair + 8-bit collect coin) using OpenGameArt licensed sources.
+5. Source provenance, license notes, and checksums for stand-in originals are documented in `client/sounds/game_monopoly_hardware/README.md`.
 
 ## Board Checklist
 
