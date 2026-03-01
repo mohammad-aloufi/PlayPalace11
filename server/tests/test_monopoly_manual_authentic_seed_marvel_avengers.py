@@ -2,7 +2,7 @@
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
 from server.games.monopoly.manual_rules.loader import load_manual_rule_set
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _start_game(board_id: str) -> MonopolyGame:

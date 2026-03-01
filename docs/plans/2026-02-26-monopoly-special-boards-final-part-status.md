@@ -275,6 +275,31 @@ The final-part promotion target is complete:
 - conformance tests enforce `manual_core` status across all special boards;
 - cross-artifact alignment tests ensure parity + anchor index remain synchronized.
 
+## New Progress: Card Text Seeding (2026-03-01)
+
+- Seeded universal card text for 25 boards that previously had zero `"text"` fields on canonical cards:
+  - Standard-$ boards (19): `animal_crossing`, `barbie`, `black_panther`, `deadpool_collectors`, `fortnite`, `fortnite_collectors`, `fortnite_flip`, `game_of_thrones`, `ghostbusters`, `harry_potter`, `jurassic_park`, `lord_of_the_rings`, `lord_of_the_rings_trilogy`, `stranger_things`, `stranger_things_collectors`, `stranger_things_netflix`, `toy_story`, `transformers`, `mario_collectors`
+  - Themed-currency boards (6): `mario_celebration` (2 Coins), `mario_kart` (2 Coins), `mario_movie` (2 Coins), `junior_super_mario` (2 Coins), `pokemon` (2 Poké Balls), `transformers_beast_wars` (4 Energon)
+- Each board received 4 `"text"` fields: `advance_to_go` (chance), `go_to_jail` (chance), `go_to_jail` (community_chest), `get_out_of_jail_free` (community_chest).
+- Total text fields added: 100 (25 boards × 4 cards).
+- All 55 boards now have universal card text coverage.
+
+## New Progress: Cash Override Evidence Metadata (2026-03-01)
+
+- Added `"text_note"` evidence annotation to 29 boards with non-empty `CARD_CASH_OVERRIDES`:
+  - Format: `"Cash override active: board_rules <card_id> → <amount>. Source: manual-evidenced board economy."`
+  - Covers `bank_dividend_50`, `income_tax_refund_20`, and `bank_error_collect_200` overrides.
+- Fixed `mario_collectors` evidence: actual override is `bank_error_collect_200 → 250` (not `bank_dividend_50 → 120` as initially planned).
+- Total text_note fields added: 29.
+
+## Verification Evidence (2026-03-01, Card Text & Evidence Metadata)
+
+- `cd server && nix shell nixpkgs#uv -c uv run --extra dev pytest tests/test_monopoly_card_text_coverage.py -q`
+  - Result: `84 passed, 26 skipped`
+- New test file: `server/tests/test_monopoly_card_text_coverage.py`
+  - `test_all_boards_have_universal_card_text` — verifies every board has `"text"` on advance_to_go, go_to_jail, get_out_of_jail_free.
+  - `test_cash_override_boards_have_evidence_notes` — verifies every board with non-empty `CARD_CASH_OVERRIDES` has `text_note` on the overridden card.
+
 ## Follow-Up Work
 
 1. Continue manual-source quality improvements for image-heavy manuals and OCR stability.

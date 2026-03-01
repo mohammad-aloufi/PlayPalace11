@@ -11,7 +11,7 @@ from server.games.monopoly.game import (
     MonopolyOptions,
 )
 from server.games.monopoly.manual_rules.loader import load_manual_rule_set
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 STAR_WARS_FAMILY_BOARD_IDS = [

@@ -1055,7 +1055,8 @@
         "effect": {
           "type": "credit",
           "amount": 65
-        }
+        },
+        "text_note": "Cash override active: board_rules income_tax_refund_20 → 65. Source: manual-evidenced board economy."
       },
       {
         "id": "go_to_jail",

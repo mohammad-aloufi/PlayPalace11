@@ -1047,7 +1047,8 @@
           "type": "credit",
           "amount": 215
         },
-        "legacy_id": "bank_error_collect_200"
+        "legacy_id": "bank_error_collect_200",
+        "text_note": "Cash override active: board_rules bank_error_collect_200 → 215. Source: manual-evidenced board economy."
       },
       {
         "id": "villains_doctor_fee_pay_50",

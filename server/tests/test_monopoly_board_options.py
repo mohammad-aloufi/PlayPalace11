@@ -1,7 +1,7 @@
 """Tests for Monopoly board-related lobby options."""
 
 from server.games.monopoly.game import MonopolyGame
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def test_monopoly_options_include_board_and_mode_selectors():

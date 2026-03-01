@@ -1049,7 +1049,8 @@
           "type": "credit",
           "amount": 220
         },
-        "legacy_id": "bank_error_collect_200"
+        "legacy_id": "bank_error_collect_200",
+        "text_note": "Cash override active: board_rules bank_error_collect_200 → 220. Source: manual-evidenced board economy."
       },
       {
         "id": "infinity_gauntlet_doctor_fee_pay_50",

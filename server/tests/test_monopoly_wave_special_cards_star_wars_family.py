@@ -4,7 +4,7 @@ import pytest
 
 from server.games.monopoly.board_parity import get_board_parity_profile
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 STAR_WARS_FAMILY_BOARD_IDS = [

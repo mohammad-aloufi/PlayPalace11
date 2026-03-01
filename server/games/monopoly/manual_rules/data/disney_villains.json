@@ -1006,7 +1006,8 @@
           "type": "credit",
           "amount": 68
         },
-        "legacy_id": "bank_dividend_50"
+        "legacy_id": "bank_dividend_50",
+        "text_note": "Cash override active: board_rules bank_dividend_50 → 68. Source: manual-evidenced board economy."
       },
       {
         "id": "chance_go_back_three",

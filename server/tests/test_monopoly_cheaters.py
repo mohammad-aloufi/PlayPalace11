@@ -2,7 +2,7 @@
 
 from server.games.monopoly.cheaters_engine import CheaterOutcome
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _create_two_player_game(options: MonopolyOptions | None = None) -> MonopolyGame:

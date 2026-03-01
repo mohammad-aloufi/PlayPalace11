@@ -1,7 +1,7 @@
 """Integration test for Wave 3 pass-GO override capability path."""
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def test_wave3_board_pass_go_override_path(monkeypatch):

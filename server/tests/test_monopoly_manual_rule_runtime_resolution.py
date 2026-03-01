@@ -2,7 +2,7 @@
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
 from server.games.monopoly.manual_rules.models import ManualRuleSet
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _build_manual_rule_set(board_id: str) -> ManualRuleSet:

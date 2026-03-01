@@ -2,7 +2,7 @@
 
 from server.games.monopoly.game import CHANCE_CARD_IDS, MonopolyGame, MonopolyOptions
 from server.games.monopoly.manual_rules.models import ManualRuleSet
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _manual_rules_with_decks(board_id: str) -> ManualRuleSet:

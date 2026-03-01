@@ -12,7 +12,7 @@ from ...game_utils.bot_helper import BotHelper
 from ...game_utils.actions import Action, ActionSet, EditboxInput, Visibility, MenuInput
 from ...game_utils.options import MenuOption, option_field
 from ...messages.localization import Localization
-from ...ui.keybinds import KeybindState
+from ...core.ui.keybinds import KeybindState
 from .banking_sim import (
     BANK_ACCOUNT_ID,
     BankingState,

@@ -1063,7 +1063,8 @@
           "type": "credit",
           "amount": 70
         },
-        "legacy_id": "income_tax_refund_20"
+        "legacy_id": "income_tax_refund_20",
+        "text_note": "Cash override active: board_rules income_tax_refund_20 → 70. Source: manual-evidenced board economy."
       },
       {
         "id": "talokanil_go_to_jail",

@@ -10,7 +10,7 @@ from server.games.monopoly.game import (
     MonopolyGame,
     MonopolyOptions,
 )
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _start_manual_board_game(player_count: int = 2) -> MonopolyGame:

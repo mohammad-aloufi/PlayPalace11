@@ -995,7 +995,8 @@
           "type": "move_absolute",
           "position": 0,
           "collect_pass_go": true
-        }
+        },
+        "text": "Advance to GO. Collect 2 Coins."
       },
       {
         "id": "bank_dividend_50",
@@ -1019,7 +1020,8 @@
         "text_key": "monopoly-card-go-to-jail",
         "effect": {
           "type": "go_to_jail"
-        }
+        },
+        "text": "Move your token to the In Jail space immediately. Do not collect 2 Coins for passing GO."
       },
       {
         "id": "poor_tax_15",
@@ -1053,18 +1055,21 @@
         "effect": {
           "type": "credit",
           "amount": 60
-        }
+        },
+        "text_note": "Cash override active: board_rules income_tax_refund_20 → 60. Source: manual-evidenced board economy."
       },
       {
         "id": "go_to_jail",
         "text_key": "monopoly-card-go-to-jail",
         "effect": {
           "type": "go_to_jail"
-        }
+        },
+        "text": "Move your token to the In Jail space immediately. Do not collect 2 Coins for passing GO."
       },
       {
         "id": "get_out_of_jail_free",
-        "text_key": "monopoly-card-get-out-of-jail"
+        "text_key": "monopoly-card-get-out-of-jail",
+        "text": "Use a Get Out of Jail Free card at the start of your next turn if you have one."
       }
     ]
   },

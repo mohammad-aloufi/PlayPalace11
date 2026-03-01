@@ -16,7 +16,7 @@ from server.games.monopoly.presets import (
     get_preset,
 )
 from server.games.registry import get_game_class
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _create_two_player_game(options: MonopolyOptions | None = None) -> MonopolyGame:

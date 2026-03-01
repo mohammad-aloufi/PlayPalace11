@@ -3,7 +3,7 @@
 import pytest
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 WAVE2_BOARD_IDS = [
     "disney_princesses",

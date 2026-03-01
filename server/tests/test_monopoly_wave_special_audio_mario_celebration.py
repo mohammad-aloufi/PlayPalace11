@@ -2,7 +2,7 @@
 
 from server.games.monopoly.game import MonopolyGame, MonopolyOptions
 from server.games.monopoly.hardware_emulation import resolve_hardware_sound_asset
-from server.users.test_user import MockUser
+from server.core.users.test_user import MockUser
 
 
 def _start_board(board_id: str, sound_mode: str) -> MonopolyGame:
