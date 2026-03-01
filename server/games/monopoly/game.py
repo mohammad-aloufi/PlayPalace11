@@ -2598,6 +2598,20 @@ class MonopolyGame(ActionGuardMixin, Game):
             return ("jurassic_park_gate_theme", 200)
         return ("jurassic_park_gate_roar", 100)
 
+    def _resolve_pride_rock_celebration(self) -> str | None:
+        """Resolve Disney Lion King Pride Rock celebration on pass-GO.
+
+        Returns the event_id when the Pride Rock mechanic is active, else None.
+        Pure celebration — does not affect pass-GO cash.
+        """
+        if self.active_board_id != "disney_lion_king":
+            return None
+        if not self.active_board_rule_pack_id:
+            return None
+        if not supports_capability(self.active_board_rule_pack_id, "pride_rock_sound_unit"):
+            return None
+        return "pride_rock_celebration"
+
     def _resolve_question_block_outcome(self) -> tuple[str, str, int] | None:
         """Resolve Mario Celebration Question Block outcome.
 
@@ -2767,6 +2781,12 @@ class MonopolyGame(ActionGuardMixin, Game):
             credited = self._credit_player(player, pass_go_cash, "pass_go")
             if self.city_engine is not None and credited > 0:
                 self.city_engine.record_progress(player.id, credited)
+            pride_rock_event = self._resolve_pride_rock_celebration()
+            if pride_rock_event is not None:
+                self._emit_board_hardware_event(
+                    pride_rock_event,
+                    payload={"pass_go_cash": pass_go_cash},
+                )
             self.broadcast_l(
                 "monopoly-pass-go",
                 player=player.name,

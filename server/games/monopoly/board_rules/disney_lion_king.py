@@ -9,6 +9,7 @@ CAPABILITY_IDS = (
     "startup_board_announcement",
     "card_id_remap",
     "card_cash_override",
+    "pride_rock_sound_unit",
 )
 CARD_ID_REMAPS = {
     ("community_chest", "doctor_fee_pay_50"): "income_tax_refund_20",

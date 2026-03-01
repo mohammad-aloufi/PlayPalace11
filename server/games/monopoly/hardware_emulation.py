@@ -46,6 +46,10 @@ HARDWARE_EVENT_SOUND_PROFILES: dict[str, dict[str, str]] = {
         "placeholder_asset": "game_monopoly_hardware/mario_question_block_game_over_placeholder.ogg",
         "original_asset": "game_monopoly_hardware/original/mario_question_block_game_over.ogg",
     },
+    "pride_rock_celebration": {
+        "placeholder_asset": "game_monopoly_hardware/pride_rock_celebration_placeholder.ogg",
+        "original_asset": "game_monopoly_hardware/original/pride_rock_celebration.ogg",
+    },
 }
 SUPPORTED_EVENT_IDS = set(HARDWARE_EVENT_SOUND_PROFILES)
 

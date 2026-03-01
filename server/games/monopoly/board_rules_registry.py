@@ -148,6 +148,7 @@ RULE_PACKS: dict[str, BoardRulePack] = {
             "startup_board_announcement",
             "card_id_remap",
             "card_cash_override",
+            "pride_rock_sound_unit",
         ),
     ),
     "disney_mickey_friends": BoardRulePack(

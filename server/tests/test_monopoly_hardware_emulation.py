@@ -227,6 +227,26 @@ def test_mario_question_block_game_over_event_is_emulatable(monkeypatch):
     assert result.sound_asset_source == "placeholder"
 
 
+def test_pride_rock_celebration_event_is_emulatable_when_sound_mode_emulated(monkeypatch):
+    monkeypatch.setattr(
+        "server.games.monopoly.hardware_emulation._sound_asset_exists",
+        lambda _relative_asset: False,
+    )
+
+    event = HardwareEvent(
+        board_id="disney_lion_king",
+        event_id="pride_rock_celebration",
+        payload={"pass_go_cash": 200},
+    )
+
+    result = resolve_hardware_event(event, sound_mode="emulated")
+
+    assert result.status == "emulated"
+    assert result.details == "pride_rock_celebration"
+    assert result.sound_asset == "game_monopoly_hardware/pride_rock_celebration_placeholder.ogg"
+    assert result.sound_asset_source == "placeholder"
+
+
 def test_resolve_hardware_sound_asset_falls_back_to_placeholder(monkeypatch):
     monkeypatch.setattr(
         "server.games.monopoly.hardware_emulation._sound_asset_exists",

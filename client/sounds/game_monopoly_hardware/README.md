@@ -21,6 +21,7 @@ No code changes are required to swap in originals.
    - `client/sounds/game_monopoly_hardware/original/mario_question_block_power_up.ogg`
    - `client/sounds/game_monopoly_hardware/original/mario_question_block_bowser.ogg`
    - `client/sounds/game_monopoly_hardware/original/mario_question_block_game_over.ogg`
+   - `client/sounds/game_monopoly_hardware/original/pride_rock_celebration.ogg`
 2. Runtime automatically prefers the `original/` asset when present and falls back to placeholder otherwise.
 3. Optional helper script:
    - `uv run --project server --extra dev python -m server.scripts.monopoly.install_hardware_sound_replacement --event <event_id> --source /abs/path/file.ogg`
@@ -130,6 +131,16 @@ Installed `original/` assets (runtime currently prefers these):
   - License: CC-BY 3.0
   - SHA256: `3f91cb3790c16fba5186affd362aaabdffa5b0d9803d90c74869bd317385ad60`
 
+- `game_monopoly_hardware/original/pride_rock_celebration.ogg`
+  - Event: `pride_rock_celebration`
+  - Source: `https://opengameart.org/content/sci-fi-sound-effects-library`
+  - Direct file (pack): `https://opengameart.org/sites/default/files/Sci-Fi%20Sound%20Library.zip`
+  - Original member: `Sci-Fi Sound Library/Mp3/Jingle_Win_00.mp3`
+  - Conversion: transcoded MP3 -> OGG via `sox` for client runtime compatibility
+  - Author: Little Robot Sound Factory
+  - License: CC-BY 3.0
+  - SHA256: `2ffb29330ef15beae154dea9345e1d83b8f230c774754f40fe813facafe9cd46`
+
 ## Mapping
 
 - `play_theme_placeholder.ogg`
@@ -191,3 +202,9 @@ Installed `original/` assets (runtime currently prefers these):
   - Current source: copied from `client/sounds/game_pig/bank.ogg`
   - Replacement needed: yes
   - Original target: `game_monopoly_hardware/original/mario_question_block_game_over.ogg`
+
+- `pride_rock_celebration_placeholder.ogg`
+  - Event: `pride_rock_celebration`
+  - Current source: copied from `client/sounds/game_monopoly_hardware/play_theme_placeholder.ogg`
+  - Replacement needed: yes
+  - Original target: `game_monopoly_hardware/original/pride_rock_celebration.ogg`
