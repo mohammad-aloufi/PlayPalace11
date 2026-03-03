@@ -12,11 +12,12 @@ import random
 from ..base import Game, Player, GameOptions
 from ..registry import register_game
 from ...game_utils.action_guard_mixin import ActionGuardMixin
+from ...game_utils.round_based_game_mixin import RoundBasedGameMixin
 from ...game_utils.actions import Action, ActionSet, Visibility
 from ...game_utils.bot_helper import BotHelper
 from ...game_utils.push_your_luck_mixin import PushYourLuckBotMixin
 from ...game_utils.game_result import GameResult, PlayerResult
-from ...game_utils.options import IntOption, MenuOption, TeamModeOption, option_field
+from ...game_utils.options import IntOption, TeamModeOption, option_field
 from ...game_utils.teams import TeamManager, TeamResultBuilder
 from ...messages.localization import Localization
 from server.core.ui.keybinds import KeybindState
@@ -80,7 +81,7 @@ class PigOptions(GameOptions):
 
 @dataclass
 @register_game
-class PigGame(PushYourLuckBotMixin, ActionGuardMixin, Game):
+class PigGame(PushYourLuckBotMixin, ActionGuardMixin, RoundBasedGameMixin, Game):
     """
     Pig dice game.
 
@@ -262,64 +263,20 @@ class PigGame(PushYourLuckBotMixin, ActionGuardMixin, Game):
 
         return errors
 
-    def on_start(self) -> None:
-        """Called when the game starts."""
-        self.status = "playing"
-        self.game_active = True
-        self.round = 0
-
-        # Set up teams based on active players
-        active_players = self.get_active_players()
-        # options.team_mode should be in internal format, but handle old display format for backwards compatibility
+    def get_team_mode(self) -> str:
         team_mode = self.options.team_mode
-        # If it contains spaces or uppercase (except 'v'), it's likely old display format
         if " " in team_mode or any(c.isupper() for c in team_mode if c != "v"):
             team_mode = TeamManager.parse_display_to_team_mode(team_mode)
-        self._team_manager.team_mode = team_mode
-        self._team_manager.setup_teams([p.name for p in active_players])
+        return team_mode
 
-        # Initialize turn order
-        self.set_turn_players(active_players)
-
-        # Reset player round scores (total scores are in TeamManager)
-        for player in active_players:
-            player.round_score = 0
-
-        # Play intro music
-        self.play_music("game_pig/mus.ogg")
-
-        # Start first round
-        self._start_round()
-
-    def _start_round(self) -> None:
-        """Start a new round."""
-        self.round += 1
-
-        # Refresh turn order with current active players (handles tiebreakers)
-        # and reset to first player for the new round
-        self.set_turn_players(self.get_active_players())
-
-        self.play_sound("game_pig/roundstart.ogg")
-        self.broadcast_l("game-round-start", round=self.round)
-
-        self._start_turn()
-
-    def _start_turn(self) -> None:
-        """Start a player's turn."""
-        player = self.current_player
-        if not player:
-            return
-
+    def _reset_player_for_game(self, player: PigPlayer) -> None:
         player.round_score = 0
 
-        # Announce turn (plays sound and broadcasts message)
-        self.announce_turn()
+    def _reset_player_for_turn(self, player: PigPlayer) -> None:
+        player.round_score = 0
 
-        # Set up bot target if this is a bot's turn
+    def _setup_bot_for_turn(self, player: PigPlayer) -> None:
         self.prepare_push_bot_turn(player)
-
-        # Rebuild menus to reflect new turn
-        self.rebuild_all_menus()
 
     def _adjust_push_bot_target(self, player: Player, target: int) -> int:
         """Adjust the bot's target score for this turn."""
@@ -373,16 +330,6 @@ class PigGame(PushYourLuckBotMixin, ActionGuardMixin, Game):
             return "bank"
         else:
             return "roll"
-
-    def _on_turn_end(self) -> None:
-        """Handle end of a player's turn."""
-        # Check if round is over (all active players have gone)
-        if self.turn_index >= len(self.turn_players) - 1:
-            self._on_round_end()
-        else:
-            # Next player (don't announce yet, _start_turn will do it)
-            self.advance_turn(announce=False)
-            self._start_turn()
 
     def _on_round_end(self) -> None:
         """Handle end of a round."""
