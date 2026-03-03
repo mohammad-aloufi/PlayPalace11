@@ -651,12 +651,7 @@ class MonopolyGame(ActionGuardMixin, Game):
         """Create a Monopoly player."""
         return MonopolyPlayer(id=player_id, name=name, is_bot=is_bot)
 
-    def create_turn_action_set(self, player: MonopolyPlayer) -> ActionSet:
-        """Create the turn action set for Monopoly."""
-        user = self.get_user(player)
-        locale = user.locale if user else "en"
-
-        action_set = ActionSet(name="turn")
+    def _add_turn_roll_and_purchase_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="roll_dice",
@@ -675,6 +670,8 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_buy_property_hidden",
             )
         )
+
+    def _add_turn_auction_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="auction_property",
@@ -707,6 +704,10 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_auction_pass_hidden",
             )
         )
+
+    def _add_turn_property_management_actions(
+        self, action_set: ActionSet, locale: str
+    ) -> None:
         action_set.add(
             Action(
                 id="mortgage_property",
@@ -762,6 +763,8 @@ class MonopolyGame(ActionGuardMixin, Game):
                 ),
             )
         )
+
+    def _add_turn_trade_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="offer_trade",
@@ -793,6 +796,8 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_decline_trade_hidden",
             )
         )
+
+    def _add_turn_jail_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="pay_bail",
@@ -811,6 +816,8 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_use_jail_card_hidden",
             )
         )
+
+    def _add_turn_banking_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="banking_balance",
@@ -854,6 +861,8 @@ class MonopolyGame(ActionGuardMixin, Game):
                 ),
             )
         )
+
+    def _add_turn_end_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="claim_cheat_reward",
@@ -872,6 +881,20 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_end_turn_hidden",
             )
         )
+
+    def create_turn_action_set(self, player: MonopolyPlayer) -> ActionSet:
+        """Create the turn action set for Monopoly."""
+        user = self.get_user(player)
+        locale = user.locale if user else "en"
+
+        action_set = ActionSet(name="turn")
+        self._add_turn_roll_and_purchase_actions(action_set, locale)
+        self._add_turn_auction_actions(action_set, locale)
+        self._add_turn_property_management_actions(action_set, locale)
+        self._add_turn_trade_actions(action_set, locale)
+        self._add_turn_jail_actions(action_set, locale)
+        self._add_turn_banking_actions(action_set, locale)
+        self._add_turn_end_actions(action_set, locale)
         return action_set
 
     def setup_keybinds(self) -> None:
@@ -910,11 +933,7 @@ class MonopolyGame(ActionGuardMixin, Game):
             include_spectators=True,
         )
 
-    def create_standard_action_set(self, player: MonopolyPlayer) -> ActionSet:
-        """Add preset announcement action to standard action set."""
-        action_set = super().create_standard_action_set(player)
-        user = self.get_user(player)
-        locale = user.locale if user else "en"
+    def _add_standard_monopoly_actions(self, action_set: ActionSet, locale: str) -> None:
         action_set.add(
             Action(
                 id="announce_preset",
@@ -924,6 +943,13 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_announce_preset_hidden",
             )
         )
+
+    def create_standard_action_set(self, player: MonopolyPlayer) -> ActionSet:
+        """Add preset announcement action to standard action set."""
+        action_set = super().create_standard_action_set(player)
+        user = self.get_user(player)
+        locale = user.locale if user else "en"
+        self._add_standard_monopoly_actions(action_set, locale)
         return action_set
 
     def get_available_preset_ids(self) -> list[str]:
