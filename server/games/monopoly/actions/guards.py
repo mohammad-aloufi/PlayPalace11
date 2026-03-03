@@ -453,3 +453,56 @@ def is_end_turn_hidden(game: MonopolyGame, player: Player) -> Visibility:
         and not game.turn_pending_purchase_space_id
         and not game.turn_can_roll_again,
     )
+
+
+def is_roll_dice_enabled(game: MonopolyGame, player: Player) -> str | None:
+    """Enable roll action for active player before rolling."""
+    error = game.guard_turn_action_enabled(player)
+    if error:
+        return error
+    mono_player = player  # type: ignore[assignment]
+    if mono_player.bankrupt:
+        return "monopoly-bankrupt-player"
+    if game.turn_pending_purchase_space_id:
+        return "monopoly-resolve-property-first"
+    if game.turn_has_rolled:
+        return "monopoly-already-rolled"
+    return None
+
+
+def is_roll_dice_hidden(game: MonopolyGame, player: Player) -> Visibility:
+    """Hide roll once a roll has been made this turn."""
+    return game.turn_action_visibility(
+        player,
+        extra_condition=not game.turn_has_rolled and not game.turn_pending_purchase_space_id,
+    )
+
+
+def is_buy_property_enabled(game: MonopolyGame, player: Player) -> str | None:
+    """Enable buy action when current player can buy landed property."""
+    error = game.guard_turn_action_enabled(player)
+    if error:
+        return error
+    if not game.rule_profile.allow_manual_property_buy:
+        return "monopoly-buy-disabled"
+    if not game.turn_has_rolled:
+        return "monopoly-roll-first"
+    mono_player = player  # type: ignore[assignment]
+    space = game._pending_purchase_space()
+    if not space:
+        return "monopoly-no-property-to-buy"
+    if space.space_id in game.property_owners:
+        return "monopoly-property-owned"
+    if game._current_liquid_balance(mono_player) < space.price:
+        return "monopoly-not-enough-cash"
+    return None
+
+
+def is_buy_property_hidden(game: MonopolyGame, player: Player) -> Visibility:
+    """Show buy action only after a roll when a property is pending."""
+    return game.turn_action_visibility(
+        player,
+        extra_condition=game.rule_profile.allow_manual_property_buy
+        and game.turn_has_rolled
+        and game._pending_purchase_space() is not None,
+    )

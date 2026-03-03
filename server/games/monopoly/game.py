@@ -3537,52 +3537,19 @@ class MonopolyGame(ActionGuardMixin, Game):
 
     def _is_roll_dice_enabled(self, player: Player) -> str | None:
         """Enable roll action for active player before rolling."""
-        error = self.guard_turn_action_enabled(player)
-        if error:
-            return error
-        mono_player: MonopolyPlayer = player  # type: ignore
-        if mono_player.bankrupt:
-            return "monopoly-bankrupt-player"
-        if self.turn_pending_purchase_space_id:
-            return "monopoly-resolve-property-first"
-        if self.turn_has_rolled:
-            return "monopoly-already-rolled"
-        return None
+        return action_guards.is_roll_dice_enabled(self, player)
 
     def _is_roll_dice_hidden(self, player: Player) -> Visibility:
         """Hide roll once a roll has been made this turn."""
-        return self.turn_action_visibility(
-            player,
-            extra_condition=not self.turn_has_rolled and not self.turn_pending_purchase_space_id,
-        )
+        return action_guards.is_roll_dice_hidden(self, player)
 
     def _is_buy_property_enabled(self, player: Player) -> str | None:
         """Enable buy action when current player can buy landed property."""
-        error = self.guard_turn_action_enabled(player)
-        if error:
-            return error
-        if not self.rule_profile.allow_manual_property_buy:
-            return "monopoly-buy-disabled"
-        if not self.turn_has_rolled:
-            return "monopoly-roll-first"
-        mono_player: MonopolyPlayer = player  # type: ignore
-        space = self._pending_purchase_space()
-        if not space:
-            return "monopoly-no-property-to-buy"
-        if space.space_id in self.property_owners:
-            return "monopoly-property-owned"
-        if self._current_liquid_balance(mono_player) < space.price:
-            return "monopoly-not-enough-cash"
-        return None
+        return action_guards.is_buy_property_enabled(self, player)
 
     def _is_buy_property_hidden(self, player: Player) -> Visibility:
         """Show buy action only after a roll when a property is pending."""
-        return self.turn_action_visibility(
-            player,
-            extra_condition=self.rule_profile.allow_manual_property_buy
-            and self.turn_has_rolled
-            and self._pending_purchase_space() is not None,
-        )
+        return action_guards.is_buy_property_hidden(self, player)
 
     def _is_auction_property_enabled(self, player: Player) -> str | None:
         """Enable auction action for pending unpurchased property."""
@@ -3768,210 +3735,11 @@ class MonopolyGame(ActionGuardMixin, Game):
 
     def _action_roll_dice(self, player: Player, action_id: str) -> None:
         """Handle rolling and landing logic for classic scaffold."""
-        mono_player: MonopolyPlayer = player  # type: ignore
-        bail_amount = self._bail_amount()
-
-        if self.turn_has_rolled or mono_player.bankrupt or self.turn_pending_purchase_space_id:
-            return
-
-        if self._is_junior_super_mario_manual_core_active():
-            numbered_die = random.randint(1, 6)
-            power_up_die = random.randint(1, 6)
-            die_1 = numbered_die
-            die_2 = power_up_die
-            total = numbered_die
-            is_doubles = False
-            self.turn_last_roll = [die_1, die_2]
-        elif self._is_junior_preset() and self.junior_ruleset:
-            rolls = [random.randint(1, 6) for _ in range(self.junior_ruleset.dice_count)]
-            die_1 = rolls[0]
-            die_2 = rolls[1] if len(rolls) > 1 else 0
-            total = sum(rolls)
-            is_doubles = len(rolls) > 1 and all(value == rolls[0] for value in rolls)
-            self.turn_last_roll = rolls
-        else:
-            die_1 = random.randint(1, 6)
-            die_2 = random.randint(1, 6)
-            total = die_1 + die_2
-            is_doubles = die_1 == die_2
-            self.turn_last_roll = [die_1, die_2]
-
-        self.turn_has_rolled = True
-        self.turn_pending_purchase_space_id = ""
-        if mono_player.in_jail:
-            if self._is_junior_super_mario_manual_core_active():
-                if mono_player.get_out_of_jail_cards > 0:
-                    mono_player.get_out_of_jail_cards -= 1
-                    mono_player.in_jail = False
-                    mono_player.jail_turns = 0
-                    self.broadcast_l(
-                        "monopoly-jail-card-used",
-                        player=mono_player.name,
-                        cards=mono_player.get_out_of_jail_cards,
-                    )
-                elif self._current_liquid_balance(mono_player) >= 1:
-                    paid = self._debit_player_to_bank(mono_player, 1, "pay_bail")
-                    if paid < 1:
-                        self.turn_doubles_count = 0
-                        self._sync_cash_scores()
-                        self.rebuild_all_menus()
-                        return
-                    mono_player.in_jail = False
-                    mono_player.jail_turns = 0
-                    self.broadcast_l(
-                        "monopoly-bail-paid",
-                        player=mono_player.name,
-                        amount=paid,
-                        cash=mono_player.cash,
-                    )
-                else:
-                    self.turn_doubles_count = 0
-                    self._sync_cash_scores()
-                    self.rebuild_all_menus()
-                    return
-
-                landed_space = self._move_player(
-                    mono_player, total, collect_pass_go=False
-                )
-                self.broadcast_l(
-                    "monopoly-roll-result",
-                    player=mono_player.name,
-                    die1=die_1,
-                    die2=die_2,
-                    total=total,
-                    space=landed_space.name,
-                )
-                resolution = self._resolve_space(mono_player, landed_space, dice_total=total)
-                if not mono_player.bankrupt and resolution == "resolved":
-                    self._apply_junior_super_mario_powerup(mono_player, die_2)
-                self.turn_doubles_count = 0
-                self._sync_cash_scores()
-                self.rebuild_all_menus()
-                return
-            if is_doubles:
-                mono_player.in_jail = False
-                mono_player.jail_turns = 0
-                self.broadcast_l(
-                    "monopoly-jail-roll-doubles",
-                    player=mono_player.name,
-                    die1=die_1,
-                    die2=die_2,
-                )
-                landed_space = self._move_player(
-                    mono_player, total, collect_pass_go=False
-                )
-                self.broadcast_l(
-                    "monopoly-roll-result",
-                    player=mono_player.name,
-                    die1=die_1,
-                    die2=die_2,
-                    total=total,
-                    space=landed_space.name,
-                )
-                self._resolve_space(mono_player, landed_space, dice_total=total)
-            else:
-                mono_player.jail_turns += 1
-                self.broadcast_l(
-                    "monopoly-jail-roll-failed",
-                    player=mono_player.name,
-                    die1=die_1,
-                    die2=die_2,
-                    attempts=mono_player.jail_turns,
-                )
-                if mono_player.jail_turns >= 3:
-                    if self._current_liquid_balance(mono_player) < bail_amount:
-                        self._liquidate_assets_for_debt(mono_player, bail_amount)
-                    if self._current_liquid_balance(mono_player) < bail_amount:
-                        self._declare_bankrupt(mono_player)
-                        self._sync_cash_scores()
-                        self.rebuild_all_menus()
-                        return
-                    paid = self._debit_player_to_bank(mono_player, bail_amount, "jail_bail")
-                    if paid < bail_amount:
-                        self._declare_bankrupt(mono_player)
-                        self._sync_cash_scores()
-                        self.rebuild_all_menus()
-                        return
-                    mono_player.in_jail = False
-                    mono_player.jail_turns = 0
-                    self.broadcast_l(
-                        "monopoly-bail-paid",
-                        player=mono_player.name,
-                        amount=paid,
-                        cash=mono_player.cash,
-                    )
-                    self._apply_sore_loser_rebate(mono_player, paid)
-                    landed_space = self._move_player(
-                        mono_player, total, collect_pass_go=False
-                    )
-                    self.broadcast_l(
-                        "monopoly-roll-result",
-                        player=mono_player.name,
-                        die1=die_1,
-                        die2=die_2,
-                        total=total,
-                        space=landed_space.name,
-                    )
-                    self._resolve_space(mono_player, landed_space, dice_total=total)
-            self.turn_doubles_count = 0
-            self._sync_cash_scores()
-            self.rebuild_all_menus()
-            return
-
-        if self.rule_profile.doubles_grant_extra_roll and is_doubles:
-            self.turn_doubles_count += 1
-        else:
-            self.turn_doubles_count = 0
-
-        if self.rule_profile.doubles_grant_extra_roll and self.turn_doubles_count >= 3:
-            self._send_to_jail(mono_player, by_triple_doubles=True)
-            self._sync_cash_scores()
-            self.rebuild_all_menus()
-            return
-
-        landed_space = self._move_player(mono_player, total, collect_pass_go=True)
-        self.broadcast_l(
-            "monopoly-roll-result",
-            player=mono_player.name,
-            die1=die_1,
-            die2=die_2,
-            total=total,
-            space=landed_space.name,
-        )
-        resolution = self._resolve_space(mono_player, landed_space, dice_total=total)
-        if self._is_junior_super_mario_manual_core_active() and not mono_player.bankrupt:
-            if resolution == "resolved":
-                resolution = self._apply_junior_super_mario_powerup(mono_player, die_2)
-
-        if self.rule_profile.doubles_grant_extra_roll and not mono_player.bankrupt and is_doubles:
-            if resolution == "resolved":
-                self._prepare_next_roll_after_doubles(mono_player)
-            elif resolution == "pending_purchase":
-                self.turn_can_roll_again = True
-
-        self._sync_cash_scores()
-        self.rebuild_all_menus()
+        action_handlers.action_roll_dice(self, player, action_id)
 
     def _action_buy_property(self, player: Player, action_id: str) -> None:
         """Buy currently pending property."""
-        if not self.rule_profile.allow_manual_property_buy:
-            return
-        mono_player: MonopolyPlayer = player  # type: ignore
-        space = self._pending_purchase_space()
-        if not space:
-            return
-        if space.space_id in self.property_owners:
-            self.turn_pending_purchase_space_id = ""
-            return
-        if not self._buy_property_for_player(mono_player, space):
-            return
-        self.turn_pending_purchase_space_id = ""
-
-        if self.turn_can_roll_again:
-            self._prepare_next_roll_after_doubles(mono_player)
-
-        self._sync_cash_scores()
-        self.rebuild_all_menus()
+        action_handlers.action_buy_property(self, player, action_id)
 
     def _action_auction_property(self, player: Player, action_id: str) -> None:
         """Start an interactive auction for the pending unpurchased property."""
