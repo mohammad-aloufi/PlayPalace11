@@ -1774,6 +1774,220 @@ class MonopolyGame(ActionGuardMixin, Game):
             return None
         return offer
 
+    def _append_trade_offer_option(
+        self,
+        options: list[str],
+        summary: str,
+        offer: MonopolyTradeOffer,
+    ) -> None:
+        """Encode and append one trade option."""
+        options.append(self._encode_trade_option(summary, offer))
+
+    def _trade_price_points(self, base_price: int) -> list[int]:
+        """Return canonical low/base/high pricing points for trade menus."""
+        return sorted({max(1, base_price // 2), base_price, base_price + 100})
+
+    def _tradable_properties_for_player(self, player: MonopolyPlayer) -> list[str]:
+        """Return sorted tradable property ids currently owned by player."""
+        return sorted(
+            [
+                space_id
+                for space_id in player.owned_space_ids
+                if self._is_property_tradable_for_trade(space_id, player.id)
+            ]
+        )
+
+    def _append_buy_property_trade_offers(
+        self,
+        options: list[str],
+        target: MonopolyPlayer,
+        proposer_cash: int,
+        target_props: list[str],
+    ) -> None:
+        """Add cash-for-property purchase offers where proposer buys from target."""
+        for space_id in target_props:
+            price = self._property_trade_value(space_id)
+            if proposer_cash < price:
+                continue
+            summary = f"Buy {self._space_label(space_id)} from {target.name} for {price}"
+            offer = MonopolyTradeOffer(
+                target_id=target.id,
+                give_cash=price,
+                receive_property_id=space_id,
+                summary=summary,
+            )
+            self._append_trade_offer_option(options, summary, offer)
+
+            for bid in self._trade_price_points(price):
+                if bid <= 0 or bid > proposer_cash:
+                    continue
+                custom_summary = f"Offer {bid} to {target.name} for {self._space_label(space_id)}"
+                custom_offer = MonopolyTradeOffer(
+                    target_id=target.id,
+                    give_cash=bid,
+                    receive_property_id=space_id,
+                    summary=custom_summary,
+                )
+                self._append_trade_offer_option(options, custom_summary, custom_offer)
+
+    def _append_sell_property_trade_offers(
+        self,
+        options: list[str],
+        target: MonopolyPlayer,
+        target_cash: int,
+        proposer_props: list[str],
+    ) -> None:
+        """Add property-for-cash sale offers where proposer sells to target."""
+        for space_id in proposer_props:
+            price = self._property_trade_value(space_id)
+            if target_cash < price:
+                continue
+            summary = f"Sell {self._space_label(space_id)} to {target.name} for {price}"
+            offer = MonopolyTradeOffer(
+                target_id=target.id,
+                give_property_id=space_id,
+                receive_cash=price,
+                summary=summary,
+            )
+            self._append_trade_offer_option(options, summary, offer)
+
+            for ask in self._trade_price_points(price):
+                if ask <= 0 or ask > target_cash:
+                    continue
+                custom_summary = f"Offer {self._space_label(space_id)} to {target.name} for {ask}"
+                custom_offer = MonopolyTradeOffer(
+                    target_id=target.id,
+                    give_property_id=space_id,
+                    receive_cash=ask,
+                    summary=custom_summary,
+                )
+                self._append_trade_offer_option(options, custom_summary, custom_offer)
+
+    def _append_swap_trade_offers(
+        self,
+        options: list[str],
+        target: MonopolyPlayer,
+        proposer_cash: int,
+        target_cash: int,
+        proposer_props: list[str],
+        target_props: list[str],
+    ) -> None:
+        """Add property swap offers with optional balancing cash."""
+        for give_space_id in proposer_props:
+            give_value = self._property_trade_value(give_space_id)
+            give_label = self._space_label(give_space_id)
+            for receive_space_id in target_props:
+                receive_value = self._property_trade_value(receive_space_id)
+                receive_label = self._space_label(receive_space_id)
+
+                swap_summary = f"Swap {give_label} with {target.name} for {receive_label}"
+                swap_offer = MonopolyTradeOffer(
+                    target_id=target.id,
+                    give_property_id=give_space_id,
+                    receive_property_id=receive_space_id,
+                    summary=swap_summary,
+                )
+                self._append_trade_offer_option(options, swap_summary, swap_offer)
+
+                diff = receive_value - give_value
+                if diff > 0 and proposer_cash >= diff:
+                    plus_cash_summary = (
+                        f"Swap {give_label} + {diff} with {target.name} for {receive_label}"
+                    )
+                    plus_cash_offer = MonopolyTradeOffer(
+                        target_id=target.id,
+                        give_cash=diff,
+                        give_property_id=give_space_id,
+                        receive_property_id=receive_space_id,
+                        summary=plus_cash_summary,
+                    )
+                    self._append_trade_offer_option(options, plus_cash_summary, plus_cash_offer)
+                elif diff < 0 and target_cash >= abs(diff):
+                    plus_cash_summary = (
+                        f"Swap {give_label} for {receive_label} + {abs(diff)} from {target.name}"
+                    )
+                    plus_cash_offer = MonopolyTradeOffer(
+                        target_id=target.id,
+                        give_property_id=give_space_id,
+                        receive_cash=abs(diff),
+                        receive_property_id=receive_space_id,
+                        summary=plus_cash_summary,
+                    )
+                    self._append_trade_offer_option(options, plus_cash_summary, plus_cash_offer)
+
+    def _append_jail_card_trade_offers(
+        self,
+        options: list[str],
+        proposer: MonopolyPlayer,
+        target: MonopolyPlayer,
+        proposer_cash: int,
+        target_cash: int,
+    ) -> None:
+        """Add cash-for-jail-card buy/sell offers."""
+        if target.get_out_of_jail_cards > 0 and proposer_cash >= JAIL_CARD_TRADE_CASH:
+            for price in sorted({JAIL_CARD_TRADE_CASH, JAIL_CARD_TRADE_CASH * 2}):
+                if price > proposer_cash:
+                    continue
+                summary = f"Buy jail card from {target.name} for {price}"
+                offer = MonopolyTradeOffer(
+                    target_id=target.id,
+                    give_cash=price,
+                    receive_jail_cards=1,
+                    summary=summary,
+                )
+                self._append_trade_offer_option(options, summary, offer)
+        if proposer.get_out_of_jail_cards > 0 and target_cash >= JAIL_CARD_TRADE_CASH:
+            for price in sorted({JAIL_CARD_TRADE_CASH, JAIL_CARD_TRADE_CASH * 2}):
+                if price > target_cash:
+                    continue
+                summary = f"Sell jail card to {target.name} for {price}"
+                offer = MonopolyTradeOffer(
+                    target_id=target.id,
+                    give_jail_cards=1,
+                    receive_cash=price,
+                    summary=summary,
+                )
+                self._append_trade_offer_option(options, summary, offer)
+
+    def _append_trade_offers_for_target(
+        self,
+        options: list[str],
+        proposer: MonopolyPlayer,
+        target: MonopolyPlayer,
+        proposer_props: list[str],
+    ) -> None:
+        """Add all canonical trade offer variants against one target player."""
+        proposer_cash = self._current_liquid_balance(proposer)
+        target_cash = self._current_liquid_balance(target)
+        target_props = self._tradable_properties_for_player(target)
+        self._append_buy_property_trade_offers(
+            options,
+            target,
+            proposer_cash,
+            target_props,
+        )
+        self._append_sell_property_trade_offers(
+            options,
+            target,
+            target_cash,
+            proposer_props,
+        )
+        self._append_swap_trade_offers(
+            options,
+            target,
+            proposer_cash,
+            target_cash,
+            proposer_props,
+            target_props,
+        )
+        self._append_jail_card_trade_offers(
+            options,
+            proposer,
+            target,
+            proposer_cash,
+            target_cash,
+        )
+
     def _options_for_offer_trade(self, player: Player) -> list[str]:
         """Menu options for private trades from current player to others."""
         mono_player: MonopolyPlayer = player  # type: ignore
@@ -1781,156 +1995,19 @@ class MonopolyGame(ActionGuardMixin, Game):
             return []
         options: list[str] = []
 
-        def _append_offer(summary: str, offer: MonopolyTradeOffer) -> None:
-            options.append(self._encode_trade_option(summary, offer))
-
         other_players = [
             p
             for p in self.turn_players
             if isinstance(p, MonopolyPlayer) and p.id != mono_player.id and not p.bankrupt
         ]
+        proposer_props = self._tradable_properties_for_player(mono_player)
         for other in other_players:
-            proposer_cash = self._current_liquid_balance(mono_player)
-            other_cash = self._current_liquid_balance(other)
-            proposer_props = sorted(
-                [
-                    space_id
-                    for space_id in mono_player.owned_space_ids
-                    if self._is_property_tradable_for_trade(space_id, mono_player.id)
-                ]
+            self._append_trade_offers_for_target(
+                options,
+                mono_player,
+                other,
+                proposer_props,
             )
-            target_props = sorted(
-                [
-                    space_id
-                    for space_id in other.owned_space_ids
-                    if self._is_property_tradable_for_trade(space_id, other.id)
-                ]
-            )
-
-            # Buy one tradable property from target for listed price.
-            for space_id in target_props:
-                price = self._property_trade_value(space_id)
-                if proposer_cash < price:
-                    continue
-                summary = f"Buy {self._space_label(space_id)} from {other.name} for {price}"
-                offer = MonopolyTradeOffer(
-                    target_id=other.id,
-                    give_cash=price,
-                    receive_property_id=space_id,
-                    summary=summary,
-                )
-                _append_offer(summary, offer)
-
-                for bid in sorted({max(1, price // 2), price, price + 100}):
-                    if bid <= 0 or bid > proposer_cash:
-                        continue
-                    custom_summary = (
-                        f"Offer {bid} to {other.name} for {self._space_label(space_id)}"
-                    )
-                    custom_offer = MonopolyTradeOffer(
-                        target_id=other.id,
-                        give_cash=bid,
-                        receive_property_id=space_id,
-                        summary=custom_summary,
-                    )
-                    _append_offer(custom_summary, custom_offer)
-
-            # Sell one tradable property to target for listed price.
-            for space_id in proposer_props:
-                price = self._property_trade_value(space_id)
-                if other_cash < price:
-                    continue
-                summary = f"Sell {self._space_label(space_id)} to {other.name} for {price}"
-                offer = MonopolyTradeOffer(
-                    target_id=other.id,
-                    give_property_id=space_id,
-                    receive_cash=price,
-                    summary=summary,
-                )
-                _append_offer(summary, offer)
-
-                for ask in sorted({max(1, price // 2), price, price + 100}):
-                    if ask <= 0 or ask > other_cash:
-                        continue
-                    custom_summary = (
-                        f"Offer {self._space_label(space_id)} to {other.name} for {ask}"
-                    )
-                    custom_offer = MonopolyTradeOffer(
-                        target_id=other.id,
-                        give_property_id=space_id,
-                        receive_cash=ask,
-                        summary=custom_summary,
-                    )
-                    _append_offer(custom_summary, custom_offer)
-
-            # Property-for-property swaps, with optional balancing cash.
-            for give_space_id in proposer_props:
-                give_value = self._property_trade_value(give_space_id)
-                give_label = self._space_label(give_space_id)
-                for receive_space_id in target_props:
-                    receive_value = self._property_trade_value(receive_space_id)
-                    receive_label = self._space_label(receive_space_id)
-
-                    swap_summary = f"Swap {give_label} with {other.name} for {receive_label}"
-                    swap_offer = MonopolyTradeOffer(
-                        target_id=other.id,
-                        give_property_id=give_space_id,
-                        receive_property_id=receive_space_id,
-                        summary=swap_summary,
-                    )
-                    _append_offer(swap_summary, swap_offer)
-
-                    diff = receive_value - give_value
-                    if diff > 0 and proposer_cash >= diff:
-                        plus_cash_summary = (
-                            f"Swap {give_label} + {diff} with {other.name} for {receive_label}"
-                        )
-                        plus_cash_offer = MonopolyTradeOffer(
-                            target_id=other.id,
-                            give_cash=diff,
-                            give_property_id=give_space_id,
-                            receive_property_id=receive_space_id,
-                            summary=plus_cash_summary,
-                        )
-                        _append_offer(plus_cash_summary, plus_cash_offer)
-                    elif diff < 0 and other_cash >= abs(diff):
-                        plus_cash_summary = (
-                            f"Swap {give_label} for {receive_label} + {abs(diff)} from {other.name}"
-                        )
-                        plus_cash_offer = MonopolyTradeOffer(
-                            target_id=other.id,
-                            give_property_id=give_space_id,
-                            receive_cash=abs(diff),
-                            receive_property_id=receive_space_id,
-                            summary=plus_cash_summary,
-                        )
-                        _append_offer(plus_cash_summary, plus_cash_offer)
-
-            # Jail-card for cash offers.
-            if other.get_out_of_jail_cards > 0 and proposer_cash >= JAIL_CARD_TRADE_CASH:
-                for price in sorted({JAIL_CARD_TRADE_CASH, JAIL_CARD_TRADE_CASH * 2}):
-                    if price > proposer_cash:
-                        continue
-                    summary = f"Buy jail card from {other.name} for {price}"
-                    offer = MonopolyTradeOffer(
-                        target_id=other.id,
-                        give_cash=price,
-                        receive_jail_cards=1,
-                        summary=summary,
-                    )
-                    _append_offer(summary, offer)
-            if mono_player.get_out_of_jail_cards > 0 and other_cash >= JAIL_CARD_TRADE_CASH:
-                for price in sorted({JAIL_CARD_TRADE_CASH, JAIL_CARD_TRADE_CASH * 2}):
-                    if price > other_cash:
-                        continue
-                    summary = f"Sell jail card to {other.name} for {price}"
-                    offer = MonopolyTradeOffer(
-                        target_id=other.id,
-                        give_jail_cards=1,
-                        receive_cash=price,
-                        summary=summary,
-                    )
-                    _append_offer(summary, offer)
 
         # Keep list stable and reasonably sized for menu navigation.
         deduped = sorted(dict.fromkeys(options))
