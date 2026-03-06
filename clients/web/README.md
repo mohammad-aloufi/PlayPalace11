@@ -20,3 +20,14 @@ This is an early version of a web client for the PlayPalace. is designed to conn
 When viewing the web client from a computer, you can tab between game, history, and chat similar to the desktop client. Most desktop hotkeys work here as well.
 From mobile, the menu items become buttons, and you can expand and collapse the history.
 Other desktop features like the buffers also work here.
+
+## Theme Verification
+
+The web client follows the operating system light/dark theme automatically.
+
+When verifying theme changes, check:
+- the main page and panel surfaces
+- dialogs and form controls
+- menu selection state
+- history and chat readability
+- both desktop and narrow/mobile widths
