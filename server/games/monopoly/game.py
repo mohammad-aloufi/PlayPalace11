@@ -875,15 +875,6 @@ class MonopolyGame(ActionGuardMixin, Game):
                 is_hidden="_is_claim_cheat_reward_hidden",
             )
         )
-        action_set.add(
-            Action(
-                id="end_turn",
-                label=Localization.get(locale, "monopoly-end-turn"),
-                handler="_action_end_turn",
-                is_enabled="_is_end_turn_enabled",
-                is_hidden="_is_end_turn_hidden",
-            )
-        )
 
     def create_turn_action_set(self, player: MonopolyPlayer) -> ActionSet:
         """Create the turn action set for Monopoly."""
@@ -917,8 +908,8 @@ class MonopolyGame(ActionGuardMixin, Game):
         )
         self.define_keybind("h", "Build house", ["build_house"], state=KeybindState.ACTIVE)
         self.define_keybind("shift+h", "Sell house", ["sell_house"], state=KeybindState.ACTIVE)
-        self.define_keybind("t", "Offer trade", ["offer_trade"], state=KeybindState.ACTIVE)
-        self.define_keybind("shift+t", "Accept trade", ["accept_trade"], state=KeybindState.ACTIVE)
+        self.define_keybind("e", "Offer trade", ["offer_trade"], state=KeybindState.ACTIVE)
+        self.define_keybind("shift+e", "Accept trade", ["accept_trade"], state=KeybindState.ACTIVE)
         self.define_keybind("ctrl+t", "Decline trade", ["decline_trade"], state=KeybindState.ACTIVE)
         self.define_keybind("j", "Pay bail", ["pay_bail"], state=KeybindState.ACTIVE)
 
@@ -929,7 +920,6 @@ class MonopolyGame(ActionGuardMixin, Game):
         )
         self.define_keybind("alt+b", "Bank ledger", ["banking_ledger"], state=KeybindState.ACTIVE)
         self.define_keybind("alt+v", "Voice command", ["voice_command"], state=KeybindState.ACTIVE)
-        self.define_keybind("e", "End turn", ["end_turn"], state=KeybindState.ACTIVE)
 
     def _define_preset_announcement_keybind(self) -> None:
         self.define_keybind(
@@ -2783,8 +2773,14 @@ class MonopolyGame(ActionGuardMixin, Game):
             and not current.bankrupt
         ):
             self._prepare_next_roll_after_doubles(current)
+            self._sync_cash_scores()
+            self.rebuild_all_menus()
+            return
 
         self._sync_cash_scores()
+        if current and isinstance(current, MonopolyPlayer):
+            self._advance_after_roll_resolution(current)
+            return
         self.rebuild_all_menus()
 
     def _start_property_auction(self, space: MonopolySpace, declined_by: MonopolyPlayer) -> None:
@@ -2795,8 +2791,11 @@ class MonopolyGame(ActionGuardMixin, Game):
             self.turn_pending_purchase_space_id = ""
             if self.turn_can_roll_again and not declined_by.bankrupt:
                 self._prepare_next_roll_after_doubles(declined_by)
+                self._sync_cash_scores()
+                self.rebuild_all_menus()
+                return
             self._sync_cash_scores()
-            self.rebuild_all_menus()
+            self._advance_after_roll_resolution(declined_by)
             return
 
         if len(bidders) == 1:
@@ -2807,8 +2806,11 @@ class MonopolyGame(ActionGuardMixin, Game):
             self._complete_auction_sale(space, winner, winning_bid)
             if self.turn_can_roll_again and not declined_by.bankrupt:
                 self._prepare_next_roll_after_doubles(declined_by)
+                self._sync_cash_scores()
+                self.rebuild_all_menus()
+                return
             self._sync_cash_scores()
-            self.rebuild_all_menus()
+            self._advance_after_roll_resolution(declined_by)
             return
 
         self.pending_auction_space_id = space.space_id
@@ -2996,6 +2998,49 @@ class MonopolyGame(ActionGuardMixin, Game):
         self.turn_pending_purchase_space_id = ""
         self.turn_can_roll_again = False
         self.broadcast_l("monopoly-roll-again", player=player.name)
+
+    def _finish_turn(self, player: MonopolyPlayer | None = None) -> None:
+        """Advance from the current turn to the next player."""
+        finisher = player if isinstance(player, MonopolyPlayer) else self.current_player
+        if isinstance(finisher, MonopolyPlayer):
+            self.voice_pending_transfer_by_player_id.pop(finisher.id, None)
+        if self._is_city_preset() and self._check_city_endgame():
+            self.rebuild_all_menus()
+            return
+        if self._is_junior_preset() and self._check_junior_endgame():
+            self.rebuild_all_menus()
+            return
+        self._reset_turn_state()
+        next_player = self.advance_turn(announce=True)
+        self._start_cheaters_turn(next_player)
+        self._start_city_turn(next_player)
+        if self._is_city_preset() and self._check_city_endgame():
+            self.rebuild_all_menus()
+            return
+        if self._is_junior_preset() and self._check_junior_endgame():
+            self.rebuild_all_menus()
+            return
+        if next_player and next_player.is_bot:
+            BotHelper.jolt_bot(next_player, ticks=random.randint(8, 14))
+
+    def _advance_after_roll_resolution(self, player: MonopolyPlayer) -> bool:
+        """Advance automatically once a roll is fully resolved."""
+        current = self.current_player
+        if (
+            self.status != "playing"
+            or not self.game_active
+            or current is None
+            or current.id != player.id
+            or player.bankrupt
+            or not self.turn_has_rolled
+            or self.turn_pending_purchase_space_id
+            or self.turn_can_roll_again
+            or self._is_auction_active()
+        ):
+            self.rebuild_all_menus()
+            return False
+        self._finish_turn(player)
+        return True
 
     def _resolve_board_pass_go_credit(self, base_credit: int) -> int:
         """Resolve pass-GO credit with board rule-pack override when active."""
@@ -4702,7 +4747,7 @@ class MonopolyGame(ActionGuardMixin, Game):
             return pending_action
         if self.turn_can_roll_again:
             return "roll_dice"
-        return "end_turn"
+        return None
 
     def _bot_think_pending_trade(self, player: MonopolyPlayer) -> str | None:
         pending_offer = self._pending_trade_for_target(player)
@@ -4764,11 +4809,7 @@ class MonopolyGame(ActionGuardMixin, Game):
             return pending_action
         if self.turn_can_roll_again:
             return "roll_dice"
-        if self._current_liquid_balance(player) >= 450 and self._options_for_build_house(player):
-            return "build_house"
-        if self._current_liquid_balance(player) >= 900 and self._options_for_unmortgage_property(player):
-            return "unmortgage_property"
-        return "end_turn"
+        return None
 
     def _initialize_start_runtime(self) -> list[Player]:
         """Initialize generic game runtime state and return active players."""

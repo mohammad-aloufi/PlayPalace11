@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ....game_utils.bot_helper import BotHelper
 from ...base import Player
 from ..voice_commands import parse_voice_command
 
@@ -108,7 +107,7 @@ def handle_scheduled_event(game: MonopolyGame, event_type: str, data: dict) -> N
 
     game.is_animating = False
     game._sync_cash_scores()
-    game.rebuild_all_menus()
+    game._advance_after_roll_resolution(mono_player)
 
 
 def action_banking_balance(game: MonopolyGame, player: Player, action_id: str) -> None:
@@ -708,7 +707,6 @@ def action_end_turn(game: MonopolyGame, player: Player, action_id: str) -> None:
     """End current player's turn and advance."""
     _ = action_id
     mono_player = player  # type: ignore[assignment]
-    game.voice_pending_transfer_by_player_id.pop(player.id, None)
     if game.cheaters_engine is not None and not mono_player.bankrupt:
         outcome = game.cheaters_engine.on_turn_end_attempt(
             mono_player.id,
@@ -722,24 +720,7 @@ def action_end_turn(game: MonopolyGame, player: Player, action_id: str) -> None:
         ):
             game.rebuild_all_menus()
             return
-    if game._is_city_preset() and game._check_city_endgame():
-        game.rebuild_all_menus()
-        return
-    if game._is_junior_preset() and game._check_junior_endgame():
-        game.rebuild_all_menus()
-        return
-    game._reset_turn_state()
-    next_player = game.advance_turn(announce=True)
-    game._start_cheaters_turn(next_player)
-    game._start_city_turn(next_player)
-    if game._is_city_preset() and game._check_city_endgame():
-        game.rebuild_all_menus()
-        return
-    if game._is_junior_preset() and game._check_junior_endgame():
-        game.rebuild_all_menus()
-        return
-    if next_player and next_player.is_bot:
-        BotHelper.jolt_bot(next_player, ticks=_game_randint(8, 14))
+    game._finish_turn(mono_player)
 
 
 def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None:
@@ -792,7 +773,7 @@ def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None
                 if paid < 1:
                     game.turn_doubles_count = 0
                     game._sync_cash_scores()
-                    game.rebuild_all_menus()
+                    game._advance_after_roll_resolution(mono_player)
                     return
                 mono_player.in_jail = False
                 mono_player.jail_turns = 0
@@ -805,7 +786,7 @@ def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None
             else:
                 game.turn_doubles_count = 0
                 game._sync_cash_scores()
-                game.rebuild_all_menus()
+                game._advance_after_roll_resolution(mono_player)
                 return
 
             game.turn_doubles_count = 0
@@ -854,13 +835,13 @@ def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None
                 if game._current_liquid_balance(mono_player) < bail_amount:
                     game._declare_bankrupt(mono_player)
                     game._sync_cash_scores()
-                    game.rebuild_all_menus()
+                    game._advance_after_roll_resolution(mono_player)
                     return
                 paid = game._debit_player_to_bank(mono_player, bail_amount, "jail_bail")
                 if paid < bail_amount:
                     game._declare_bankrupt(mono_player)
                     game._sync_cash_scores()
-                    game.rebuild_all_menus()
+                    game._advance_after_roll_resolution(mono_player)
                     return
                 mono_player.in_jail = False
                 mono_player.jail_turns = 0
@@ -884,7 +865,7 @@ def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None
         game.turn_doubles_count = 0
         if not game.is_animating:
             game._sync_cash_scores()
-            game.rebuild_all_menus()
+            game._advance_after_roll_resolution(mono_player)
         return
 
     if game.rule_profile.doubles_grant_extra_roll and is_doubles:
@@ -895,7 +876,7 @@ def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None
     if game.rule_profile.doubles_grant_extra_roll and game.turn_doubles_count >= 3:
         game._send_to_jail(mono_player, by_triple_doubles=True)
         game._sync_cash_scores()
-        game.rebuild_all_menus()
+        game._advance_after_roll_resolution(mono_player)
         return
 
     _schedule_monopoly_roll_resolution(
@@ -924,6 +905,7 @@ def action_buy_property(game: MonopolyGame, player: Player, action_id: str) -> N
         return
     if space.space_id in game.property_owners:
         game.turn_pending_purchase_space_id = ""
+        game._advance_after_roll_resolution(mono_player)
         return
     if not game._buy_property_for_player(mono_player, space):
         return
@@ -931,6 +913,9 @@ def action_buy_property(game: MonopolyGame, player: Player, action_id: str) -> N
 
     if game.turn_can_roll_again:
         game._prepare_next_roll_after_doubles(mono_player)
+        game._sync_cash_scores()
+        game.rebuild_all_menus()
+        return
 
     game._sync_cash_scores()
-    game.rebuild_all_menus()
+    game._advance_after_roll_resolution(mono_player)
