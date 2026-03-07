@@ -150,6 +150,10 @@ def test_blackjack_on_start_waits_for_bets_then_deals_and_posts_bets() -> None:
     assert "game_3cardpoker/bet.ogg" in sounds
     assert any(sound in SHUFFLE_SOUND_SET for sound in sounds)
     assert any(sound in DEAL_SOUND_SET for sound in sounds)
+    spoken_messages = host_user.get_spoken_messages()
+    hand_msg_index = next(i for i, msg in enumerate(spoken_messages) if "Hand 1. Place your bets." in msg)
+    bet_msg_index = next(i for i, msg in enumerate(spoken_messages) if "You bet 10." in msg)
+    assert hand_msg_index < bet_msg_index
 
 
 def test_blackjack_on_start_single_player_does_not_end_immediately() -> None:
@@ -389,7 +393,7 @@ def test_blackjack_set_next_bet_between_rounds_updates_future_posted_bet() -> No
     assert host_player.next_bet == 25
     assert host_player.next_bet_entered is True
     assert guest_player.next_bet_entered is False
-    assert "Base bet set to 25" in (host_user.get_last_spoken() or "")
+    assert "Bet set to 25" in (host_user.get_last_spoken() or "")
     assert "game_3cardpoker/bet.ogg" in host_user.get_sounds_played()
 
 
@@ -428,7 +432,7 @@ def test_blackjack_b_keybind_reads_current_bets_during_round() -> None:
     assert host_player.id not in game._pending_actions
 
 
-def test_blackjack_b_keybind_between_hands_opens_set_next_bet_input() -> None:
+def test_blackjack_b_keybind_between_hands_opens_change_bet_input() -> None:
     game, host_player, host_user = create_game_with_host()
     game.setup_keybinds()
     game.status = "playing"
@@ -438,8 +442,24 @@ def test_blackjack_b_keybind_between_hands_opens_set_next_bet_input() -> None:
 
     game._handle_keybind_event(host_player, {"key": "b"})
 
-    assert game._pending_actions.get(host_player.id) == "set_next_bet"
+    assert game._pending_actions.get(host_player.id) == "change_bet"
     assert "action_input_editbox" in host_user.editboxes
+    assert host_user.editboxes["action_input_editbox"]["prompt"] == "Change your bet"
+
+
+def test_blackjack_actions_menu_hides_bet_previous_action() -> None:
+    game, host_player, _host_user = create_game_with_host()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "settle"
+    game.awaiting_next_bets = True
+    host_player.chips = 100
+
+    standard = game.create_standard_action_set(host_player)
+    enabled_ids = [ra.action.id for ra in standard.get_enabled_actions(game, host_player)]
+
+    assert "change_bet" in enabled_ids
+    assert "bet_previous" not in enabled_ids
 
 
 def test_blackjack_starts_next_hand_when_all_players_enter_bets() -> None:
@@ -467,6 +487,44 @@ def test_blackjack_starts_next_hand_when_all_players_enter_bets() -> None:
 
     game._action_set_next_bet(guest_player, "30", "set_next_bet")
     assert started["value"] is True
+
+
+def test_blackjack_whose_turn_between_hands_reports_waiting_bettors() -> None:
+    game, host_player, host_user = create_game_with_host()
+    guest_user = MockUser("Guest")
+    guest_player = game.add_player("Guest", guest_user)
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "settle"
+    game.awaiting_next_bets = True
+    host_player.chips = 100
+    guest_player.chips = 100
+    host_player.next_bet_entered = True
+    guest_player.next_bet_entered = False
+
+    game._action_whose_turn(host_player, "whose_turn")
+
+    spoken = host_user.get_last_spoken() or ""
+    assert "Waiting for bets from Guest." in spoken
+
+
+def test_blackjack_whose_turn_between_hands_all_bets_in_uses_default_whose_turn() -> None:
+    game, host_player, host_user = create_game_with_host()
+    guest_user = MockUser("Guest")
+    guest_player = game.add_player("Guest", guest_user)
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "settle"
+    game.awaiting_next_bets = True
+    host_player.chips = 100
+    guest_player.chips = 100
+    host_player.next_bet_entered = True
+    guest_player.next_bet_entered = True
+
+    game._action_whose_turn(host_player, "whose_turn")
+
+    spoken = host_user.get_last_spoken() or ""
+    assert spoken == "No one's turn right now."
 
 
 def test_blackjack_between_hands_timer_timeout_uses_base_bet_for_missing_entries() -> None:
@@ -896,6 +954,31 @@ def test_blackjack_pitch_style_hides_other_totals_in_table_status() -> None:
     assert "Host: 100 chips, bet 10, total" in spoken
     assert "Guest: 100 chips, bet 10, total" not in spoken
     assert "Guest: 100 chips, bet 10" in spoken
+    assert "Rules:" not in spoken
+
+
+def test_blackjack_status_keybinds_do_not_rebuild_menus() -> None:
+    game, host_player, host_user = create_game_with_host()
+    game.setup_keybinds()
+    game.status = "playing"
+    game.game_active = True
+    game.phase = "players"
+    host_player.chips = 100
+    host_player.bet = 10
+    host_player.hand = [make_card(1, 10, 1), make_card(2, 7, 2)]
+    game.dealer_hand = [make_card(3, 9, 3), make_card(4, 8, 4)]
+    game.dealer_hole_revealed = True
+    game.set_turn_players([host_player], reset_index=True)
+
+    game.rebuild_all_menus()
+    host_user.messages = []
+
+    game._handle_keybind_event(host_player, {"key": "t"})
+    game._handle_keybind_event(host_player, {"key": "e"})
+    game._handle_keybind_event(host_player, {"key": "s"})
+
+    menu_events = [m for m in host_user.messages if m.type in {"show_menu", "update_menu"}]
+    assert menu_events == []
 
 
 def test_blackjack_insurance_prompt_announced_to_player() -> None:

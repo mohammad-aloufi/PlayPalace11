@@ -663,14 +663,22 @@ class BlackjackGame(Game):
 
         local_actions = [
             Action(
-                id="set_next_bet",
-                label=Localization.get(locale, "blackjack-set-base-bet", count=self.options.base_bet),
+                id="bet_previous",
+                label=f"Bet {self.options.base_bet}",
+                handler="_action_bet_previous",
+                is_enabled="_is_set_next_bet_enabled",
+                is_hidden="_is_set_next_bet_hidden",
+                get_label="_get_bet_previous_label",
+                show_in_actions_menu=False,
+            ),
+            Action(
+                id="change_bet",
+                label="Change bet",
                 handler="_action_set_next_bet",
                 is_enabled="_is_set_next_bet_enabled",
                 is_hidden="_is_set_next_bet_hidden",
-                get_label="_get_set_next_bet_label",
                 input_request=EditboxInput(
-                    prompt="blackjack-enter-base-bet",
+                    prompt="blackjack-enter-bet",
                     default="",
                     bot_input="_bot_input_set_next_bet",
                 ),
@@ -733,7 +741,7 @@ class BlackjackGame(Game):
         self.define_keybind("d", "Double down", ["double_down"], state=KeybindState.ACTIVE)
         self.define_keybind("p", "Split", ["split"], state=KeybindState.ACTIVE)
         self.define_keybind("u", "Surrender", ["surrender"], state=KeybindState.ACTIVE)
-        self.define_keybind("b", "Set next bet / Read bets", ["set_next_bet", "read_bets"], state=KeybindState.ACTIVE)
+        self.define_keybind("b", "Change bet / Read bets", ["change_bet", "read_bets"], state=KeybindState.ACTIVE)
         self.define_keybind("i", "Insurance", ["take_insurance"], state=KeybindState.ACTIVE)
         self.define_keybind("n", "Decline insurance", ["decline_insurance"], state=KeybindState.ACTIVE)
         self.define_keybind("m", "Even money", ["even_money"], state=KeybindState.ACTIVE)
@@ -742,6 +750,48 @@ class BlackjackGame(Game):
         self.define_keybind("e", "Table status", ["table_status"], state=KeybindState.ACTIVE, include_spectators=True)
         self.define_keybind("shift+r", "Read rules", ["read_rules"], state=KeybindState.ACTIVE, include_spectators=True)
         self.define_keybind("shift+t", "Turn timer", ["check_turn_timer"], state=KeybindState.ACTIVE, include_spectators=True)
+
+    def _handle_keybind_event(self, player: Player, event: dict) -> None:
+        """Handle keybinds with blackjack-specific no-rebuild read/status keys."""
+        key = self._normalize_keybind(event)
+        menu_item_id = event.get("menu_item_id")
+        menu_index = event.get("menu_index")
+
+        keybinds = self._keybinds.get(key)
+        if keybinds is None:
+            return
+
+        is_spectator = self._is_player_spectator(player)
+
+        from ..base import ActionContext
+
+        context = ActionContext(
+            menu_item_id=menu_item_id,
+            menu_index=menu_index,
+            from_keybind=True,
+        )
+
+        executed_any = self._execute_keybinds(
+            player, keybinds, is_spectator, menu_item_id, context
+        )
+
+        no_rebuild_keys = {
+            "t",
+            "ctrl+w",
+            "s",
+            "shift+s",
+            "ctrl+r",
+            "r",
+            "c",
+            "e",
+            "shift+r",
+            "shift+t",
+        }
+        if key in no_rebuild_keys:
+            return
+
+        if self._should_rebuild_after_keybind(player, executed_any):
+            self.rebuild_all_menus()
 
     # ======================================================================
     # Game flow
@@ -866,8 +916,6 @@ class BlackjackGame(Game):
         self.dealer_hand = []
         self.dealer_hole_revealed = False
 
-        self.broadcast_l("blackjack-hand-start", hand=self.hand_number)
-        self.play_sound(SOUND_ROUND_START)
         self._ensure_deck(min_cards=len(active_players) * 6)
         self._post_bets(active_players)
         self._deal_initial_cards(active_players)
@@ -1301,6 +1349,17 @@ class BlackjackGame(Game):
         )
         self._advance_insurance_to_next_player()
 
+    def _action_bet_previous(self, player: Player, action_id: str) -> None:
+        p = player if isinstance(player, BlackjackPlayer) else None
+        if not p or self._is_set_next_bet_enabled(p):
+            return
+
+        amount = self._effective_next_bet(p)
+        p.next_bet = amount
+        p.next_bet_entered = True
+        self.play_sound(SOUND_BET)
+        self._start_next_hand_if_ready()
+
     def _action_set_next_bet(self, player: Player, amount_str: str, action_id: str) -> None:
         p = player if isinstance(player, BlackjackPlayer) else None
         if not p or self._is_set_next_bet_enabled(p):
@@ -1325,7 +1384,7 @@ class BlackjackGame(Game):
         p.next_bet_entered = True
         self.play_sound(SOUND_BET)
         if user:
-            user.speak_l("blackjack-option-changed-base-bet", count=amount)
+            user.speak_l("blackjack-option-changed-bet", count=amount)
         self._start_next_hand_if_ready()
 
     # ======================================================================
@@ -1506,6 +1565,24 @@ class BlackjackGame(Game):
         self._suppress_keybind_rebuild(player)
         user.speak(self._rules_readout_text(user.locale))
 
+    def _action_whose_turn(self, player: Player, action_id: str) -> None:
+        user = self.get_user(player)
+        if not user:
+            return
+
+        if self._is_between_hands():
+            waiting = [
+                p.name
+                for p in self._between_hands_players()
+                if not p.next_bet_entered
+            ]
+            if waiting:
+                waiting_names = Localization.format_list_and(user.locale, waiting)
+                user.speak(f"Waiting for bets from {waiting_names}.")
+                return
+
+        super()._action_whose_turn(player, action_id)
+
     def _action_check_turn_timer(self, player: Player, action_id: str) -> None:
         user = self.get_user(player)
         if not user:
@@ -1535,14 +1612,12 @@ class BlackjackGame(Game):
             return str(self._clamp_table_bet(self.options.base_bet))
         return str(self._effective_next_bet(p))
 
-    def _get_set_next_bet_label(self, player: Player, action_id: str) -> str:
-        user = self.get_user(player)
-        locale = user.locale if user else "en"
+    def _get_bet_previous_label(self, player: Player, action_id: str) -> str:
         if isinstance(player, BlackjackPlayer):
             amount = self._effective_next_bet(player)
         else:
             amount = self._clamp_table_bet(self.options.base_bet)
-        return Localization.get(locale, "blackjack-set-base-bet", count=amount)
+        return f"Bet {amount}"
 
     # ======================================================================
     # Helpers
@@ -1958,6 +2033,8 @@ class BlackjackGame(Game):
     def _start_between_hands(self) -> None:
         self.awaiting_next_bets = True
         self.next_hand_wait_ticks = 0
+        self.broadcast_l("blackjack-hand-start", hand=self.hand_number + 1)
+        self.play_sound(SOUND_ROUND_START)
 
         default_bet = self._clamp_table_bet(self.options.base_bet)
         for player in self._between_hands_players():
@@ -2030,7 +2107,6 @@ class BlackjackGame(Game):
                 "blackjack-dealer-reveals",
                 lambda locale: {
                     "card": card_name(self.dealer_hand[1], locale),
-                    "cards": read_cards(self.dealer_hand, locale),
                     "total": self._total_text(locale, total, is_soft),
                 },
             )

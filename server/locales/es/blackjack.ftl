@@ -13,6 +13,8 @@ blackjack-option-changed-starting-chips = Starting chips set to { $count }.
 blackjack-set-base-bet = Base bet: { $count }
 blackjack-enter-base-bet = Enter base bet
 blackjack-option-changed-base-bet = Base bet set to { $count }.
+blackjack-enter-bet = Change your bet
+blackjack-option-changed-bet = Bet set to { $count }.
 
 blackjack-set-table-min-bet = Table minimum bet: { $count }
 blackjack-enter-table-min-bet = Enter table minimum bet
@@ -109,14 +111,14 @@ blackjack-insurance-closed = You cannot make an insurance decision right now.
 blackjack-cannot-insure = You cannot take insurance right now.
 blackjack-cannot-even-money = You cannot take even money right now.
 
-blackjack-hand-start = Hand { $hand }.
+blackjack-hand-start = Hand { $hand }. Place your bets.
 blackjack-you-bet = You bet { $amount }.
 blackjack-player-bets = { $player } bets { $amount }.
 blackjack-insurance-offer = Insurance is open.
 
 blackjack-dealer-shows = Dealer shows { $card }.
-blackjack-dealer-reveals = Dealer reveals { $card }. Dealer has { $cards } ({ $total }).
-blackjack-dealer-hits = Dealer draws { $card }. Dealer has { $total }.
+blackjack-dealer-reveals = Dealer reveals { $card }, for a total of { $total }.
+blackjack-dealer-hits = Dealer draws { $card }, for a total of { $total }.
 blackjack-dealer-stands = Dealer stands with { $total }.
 blackjack-dealer-bust = Dealer busts with { $total }.
 blackjack-dealer-blackjack = Dealer has blackjack.
