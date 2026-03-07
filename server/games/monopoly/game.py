@@ -1428,7 +1428,7 @@ class MonopolyGame(ActionGuardMixin, Game):
         if not kwargs:
             return kwargs
         formatted = dict(kwargs)
-        for key in ("amount", "cash", "price"):
+        for key in ("amount", "cash", "price", "per_house", "per_hotel"):
             value = formatted.get(key)
             if isinstance(value, int):
                 formatted[key] = self._format_money(value)
@@ -1510,6 +1510,50 @@ class MonopolyGame(ActionGuardMixin, Game):
             f"monopoly-space-{space.space_id}",
             fallback=space.name,
         )
+
+    def _handle_keybind_event(self, player: Player, event: dict) -> None:
+        """Handle keybinds with Monopoly-specific no-rebuild status keys."""
+        key = self._normalize_keybind(event)
+        menu_item_id = event.get("menu_item_id")
+        menu_index = event.get("menu_index")
+
+        if key == "space" and getattr(self, "status", "playing") != "playing" and menu_item_id:
+            handler = getattr(self, "_speak_option_description", None)
+            if handler and handler(player, menu_item_id):
+                return
+
+        keybinds = self._keybinds.get(key)
+        if keybinds is None:
+            return
+
+        is_spectator = self._is_player_spectator(player)
+
+        from ..base import ActionContext
+
+        context = ActionContext(
+            menu_item_id=menu_item_id,
+            menu_index=menu_index,
+            from_keybind=True,
+        )
+
+        executed_any = self._execute_keybinds(
+            player, keybinds, is_spectator, menu_item_id, context
+        )
+
+        no_rebuild_keys = {
+            "c",
+            "ctrl+b",
+            "ctrl+w",
+            "alt+b",
+            "o",
+            "s",
+            "t",
+        }
+        if key in no_rebuild_keys:
+            return
+
+        if self._should_rebuild_after_keybind(player, executed_any):
+            self.rebuild_all_menus()
 
     def _is_announce_preset_enabled(self, player: Player) -> str | None:
         """Enable preset announcements during active play."""
@@ -2548,6 +2592,13 @@ class MonopolyGame(ActionGuardMixin, Game):
                 reason,
                 allow_partial=True,
             )
+            if paid > 0:
+                self.broadcast_l(
+                    "monopoly-player-paid-player",
+                    player=other.name,
+                    target=player.name,
+                    amount=paid,
+                )
             total_collected += paid
             if paid < amount_each:
                 self._declare_bankrupt(
@@ -2585,6 +2636,13 @@ class MonopolyGame(ActionGuardMixin, Game):
                 reason,
                 allow_partial=True,
             )
+            if paid > 0:
+                self.broadcast_l(
+                    "monopoly-player-paid-player",
+                    player=player.name,
+                    target=other.name,
+                    amount=paid,
+                )
             if paid < amount_each:
                 self._declare_bankrupt(
                     player,
@@ -4980,7 +5038,46 @@ class MonopolyGame(ActionGuardMixin, Game):
                     return resolved_manual
 
         default_text_key = CARD_DESCRIPTION_KEYS.get(card_id, card_id)
-        return Localization.get(locale, default_text_key)
+        return self._monopoly_text(
+            locale,
+            default_text_key,
+            **self._card_draw_text_kwargs(card_id),
+        )
+
+    def _card_draw_text_kwargs(self, card_id: str) -> dict[str, int]:
+        """Return localization kwargs for classic card text that includes money."""
+        if card_id == "advance_to_go":
+            pass_go_cash = max(0, self.rule_profile.pass_go_cash)
+            if self._is_electronic_banking_preset() and self.banking_profile:
+                pass_go_cash = max(0, self.banking_profile.pass_go_credit)
+            return {"amount": self._resolve_board_pass_go_credit(pass_go_cash)}
+
+        amount_defaults = {
+            "bank_dividend_50": 50,
+            "poor_tax_15": 15,
+            "chairman_of_the_board_pay_50_each": 50,
+            "building_loan_matures_150": 150,
+            "crossword_competition_100": 100,
+            "bank_error_collect_200": 200,
+            "doctor_fee_pay_50": 50,
+            "sale_of_stock_collect_50": 50,
+            "holiday_fund_matures_100": 100,
+            "income_tax_refund_20": 20,
+            "its_your_birthday_collect_10_each": 10,
+            "life_insurance_matures_100": 100,
+            "hospital_fees_pay_100": 100,
+            "school_fees_pay_50": 50,
+            "consultancy_fee_collect_25": 25,
+            "beauty_contest_second_prize_10": 10,
+            "inherit_100": 100,
+        }
+        if card_id in amount_defaults:
+            return {"amount": self._resolve_board_card_cash(card_id, amount_defaults[card_id])}
+        if card_id == "general_repairs":
+            return {"per_house": 25, "per_hotel": 100}
+        if card_id == "street_repairs":
+            return {"per_house": 40, "per_hotel": 115}
+        return {}
 
     def _resolve_card_deck_label(self, deck_type: str, *, locale: str = "en") -> str:
         """Resolve deck label for card draw announcements."""

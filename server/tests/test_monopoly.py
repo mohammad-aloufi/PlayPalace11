@@ -744,6 +744,9 @@ def test_monopoly_star_wars_board_preserves_credits_currency_format() -> None:
     game.property_owners["atlantic_avenue"] = host.id
     mortgage_options = game._options_for_mortgage_property(host)
     assert mortgage_options == ["Atlantic Avenue for 130 Credits ## space=atlantic_avenue"]
+    assert game._resolve_card_draw_text(None, "bank_dividend_50", locale="en") == (
+        "Bank pays you dividend of 50 Credits"
+    )
 
 
 def test_monopoly_income_tax_space_deducts_cash(monkeypatch):
@@ -985,6 +988,22 @@ def test_monopoly_cash_keybind_reads_cash_and_stays_escape_only() -> None:
 
     spoken = " ".join(host_user.get_spoken_messages())
     assert "$1,500 in cash." in spoken
+
+
+def test_monopoly_status_keybinds_do_not_rebuild_menus() -> None:
+    game = _start_two_player_game()
+    game.setup_keybinds()
+    host = game.players[0]
+    host_user = game.get_user(host)
+    assert host_user is not None
+
+    before_updates = len([m for m in host_user.messages if m.type == "update_menu"])
+
+    game._handle_keybind_event(host, {"key": "c"})
+    game._handle_keybind_event(host, {"key": "t"})
+
+    after_updates = len([m for m in host_user.messages if m.type == "update_menu"])
+    assert after_updates == before_updates
 
 
 def test_monopoly_cash_keybind_does_not_force_roll_focus() -> None:
@@ -1398,6 +1417,25 @@ def test_monopoly_trade_accept_invalid_offer_cancels_pending():
     assert game.pending_trade_offer is None
     assert game.property_owners["baltic_avenue"] == host.id
     assert host.cash == STARTING_CASH
+
+
+def test_monopoly_birthday_card_announces_player_payments() -> None:
+    game = _start_two_player_game()
+    host = game.players[0]
+    host_user = game.get_user(host)
+    guest = game.players[1]
+    guest_user = game.get_user(guest)
+    assert host_user is not None
+    assert guest_user is not None
+
+    result = game._collect_from_each_other_player(host, 10, reason="card_birthday")
+
+    assert result == "resolved"
+    host_spoken = " ".join(host_user.get_spoken_messages())
+    guest_spoken = " ".join(guest_user.get_spoken_messages())
+    assert "Guest paid $10 to Host." in host_spoken
+    assert "Guest paid $10 to Host." in guest_spoken
+    assert "Host collected $10 (cash: $1,510)." in host_spoken
 
 
 def test_monopoly_bot_accepts_favorable_pending_trade_offer():
