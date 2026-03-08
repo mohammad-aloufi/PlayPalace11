@@ -4600,7 +4600,6 @@ class MonopolyGame(ActionGuardMixin, Game):
         self.turn_last_roll.clear()
         self.turn_pending_purchase_space_id = ""
         self.turn_can_roll_again = False
-        self._clear_pending_rent_payment()
         if reset_doubles:
             self.turn_doubles_count = 0
 
@@ -7157,6 +7156,7 @@ class MonopolyGame(ActionGuardMixin, Game):
         self.held_get_out_of_jail_cards_by_player_id.clear()
         self.free_parking_pool = 0
         self._clear_pending_auction()
+        self._clear_pending_rent_payment()
         self.junior_endgame_evaluating = False
         self.city_endgame_evaluating = False
         self._reset_turn_state()

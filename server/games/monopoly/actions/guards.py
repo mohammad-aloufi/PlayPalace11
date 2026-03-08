@@ -489,33 +489,17 @@ def is_claim_cheat_reward_hidden(game: MonopolyGame, player: Player) -> Visibili
 
 
 def is_end_turn_enabled(game: MonopolyGame, player: Player) -> str | None:
-    """Enable end-turn after rolling."""
-    error = game.guard_turn_action_enabled(player)
-    if error:
-        return error
-    if game.turn_pending_purchase_space_id:
-        return "monopoly-resolve-property-first"
-    if game.turn_can_roll_again:
-        return "monopoly-roll-again-required"
-    if game.active_preset_id != "cheaters" and not game.turn_has_rolled:
-        return "monopoly-roll-first"
-    return None
+    """Keep manual end-turn disabled; Monopoly advances automatically."""
+    _ = game
+    _ = player
+    return "action-disabled"
 
 
 def is_end_turn_hidden(game: MonopolyGame, player: Player) -> Visibility:
-    """Hide end-turn when turn state cannot accept an end-turn attempt."""
-    if game.active_preset_id == "cheaters":
-        show_action = not game.turn_pending_purchase_space_id and not game.turn_can_roll_again
-        return game.turn_action_visibility(
-            player,
-            extra_condition=show_action,
-        )
-    return game.turn_action_visibility(
-        player,
-        extra_condition=game.turn_has_rolled
-        and not game.turn_pending_purchase_space_id
-        and not game.turn_can_roll_again,
-    )
+    """Never expose manual end-turn in Monopoly."""
+    _ = game
+    _ = player
+    return Visibility.HIDDEN
 
 
 def is_roll_dice_enabled(game: MonopolyGame, player: Player) -> str | None:

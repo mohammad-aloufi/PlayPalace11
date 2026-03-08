@@ -369,6 +369,9 @@ def bot_select_build_house(game: MonopolyGame, player: Player, options: list[str
     """Pick the build option with strongest rent gain for cost."""
     if not options:
         return None
+    pairs = list(zip(options, build_house_space_ids(game, player), strict=False))
+    if not pairs:
+        return None
 
     def _score(space_id: str) -> tuple[int, int, str]:
         space = game.active_space_by_id[space_id]
@@ -384,4 +387,4 @@ def bot_select_build_house(game: MonopolyGame, player: Player, options: list[str
         gain = max(0, next_rent - current_rent)
         return (gain, -space.house_cost, game._space_label(space_id))
 
-    return max(options, key=_score)
+    return max(pairs, key=lambda pair: _score(pair[1]))[0]

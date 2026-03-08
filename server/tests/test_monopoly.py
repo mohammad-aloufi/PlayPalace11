@@ -938,6 +938,58 @@ def test_monopoly_bot_bankruptcy_finishes_game(monkeypatch):
     assert host.cash == STARTING_CASH + 30
 
 
+def test_monopoly_manual_end_turn_does_not_clear_pending_payment():
+    game = _start_two_player_game()
+    host = game.players[0]
+    guest = game.players[1]
+
+    game.current_player = guest
+    guest.cash = 40
+    game._start_pending_rent_payment(
+        guest,
+        owner=host,
+        amount_due=100,
+        landed_space=game.active_space_by_id["boardwalk"],
+        reason="rent:boardwalk",
+    )
+
+    game.execute_action(guest, "end_turn")
+
+    assert game.current_player is guest
+    assert game.pending_rent_payment_amount == 100
+    assert game.pending_rent_payment_owner_id == host.id
+
+
+def test_monopoly_bot_trade_acceptance_retries_pending_payment_resolution():
+    game = _start_two_player_game()
+    host = game.players[0]
+    guest = game.players[1]
+    guest.is_bot = True
+
+    host.cash = 40
+    host.owned_space_ids.append("baltic_avenue")
+    game.property_owners["baltic_avenue"] = host.id
+    game.current_player = host
+    game._start_pending_rent_payment(
+        host,
+        owner=None,
+        amount_due=100,
+        landed_space=None,
+        reason="income_tax",
+        payment_label="Income Tax",
+    )
+
+    offer = _find_trade_option(game, host, "Sell Baltic Avenue to Guest for $60")
+    assert offer is not None
+
+    game.execute_action(host, "offer_trade", input_value=offer)
+
+    assert game.pending_trade_offer is None
+    assert game.pending_rent_payment_amount == 0
+    assert host.cash == 0
+    assert guest.cash == STARTING_CASH - 60
+
+
 def test_monopoly_bankruptcy_transfers_assets_to_creditor(monkeypatch):
     game = _start_two_player_game()
     host = game.players[0]
@@ -1598,6 +1650,24 @@ def test_monopoly_bot_builds_when_cash_rich_and_build_options_exist():
     game.turn_pending_purchase_space_id = ""
 
     assert game.bot_think(host) == "build_house"
+
+
+def test_monopoly_bot_build_house_selector_uses_labeled_options():
+    game = _start_two_player_game()
+    host = game.current_player
+    assert host is not None
+
+    for space_id in ("mediterranean_avenue", "baltic_avenue"):
+        host.owned_space_ids.append(space_id)
+        game.property_owners[space_id] = host.id
+    host.cash = 1000
+
+    options = game._options_for_build_house(host)
+    selection = game._bot_select_build_house(host, options)
+
+    assert selection in options
+    game.execute_action(host, "build_house", input_value=selection)
+    assert game._building_level("baltic_avenue") == 1
 
 
 def test_monopoly_build_house_obeys_even_building_rules():

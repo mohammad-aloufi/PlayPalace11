@@ -786,6 +786,8 @@ def action_offer_trade(game: MonopolyGame, player: Player, option: str, action_i
                 target=target.name,
                 offer=parsed.summary,
             )
+            game._try_resolve_pending_rent_payment(mono_player)
+            game._try_resolve_pending_rent_payment(target)
         else:
             game.broadcast_l(
                 "monopoly-trade-declined",
@@ -937,23 +939,10 @@ def action_claim_cheat_reward(game: MonopolyGame, player: Player, action_id: str
 
 
 def action_end_turn(game: MonopolyGame, player: Player, action_id: str) -> None:
-    """End current player's turn and advance."""
+    """Ignore manual end-turn attempts; Monopoly advances automatically."""
     _ = action_id
-    mono_player = player  # type: ignore[assignment]
-    if game.cheaters_engine is not None and not mono_player.bankrupt:
-        outcome = game.cheaters_engine.on_turn_end_attempt(
-            mono_player.id,
-            context={"turn_has_rolled": game.turn_has_rolled},
-        )
-        if not game._apply_cheaters_outcome(
-            mono_player,
-            outcome,
-            reason="turn_end",
-            block_action_on_penalty=True,
-        ):
-            game.rebuild_all_menus()
-            return
-    game._finish_turn(mono_player)
+    _ = player
+    game.rebuild_all_menus()
 
 
 def action_roll_dice(game: MonopolyGame, player: Player, action_id: str) -> None:
