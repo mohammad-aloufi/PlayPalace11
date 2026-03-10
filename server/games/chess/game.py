@@ -286,6 +286,7 @@ class ChessGame(Game):
                     is_hidden="_is_square_hidden",
                     get_label="_get_square_label",
                     show_in_actions_menu=False,
+                    show_disabled_label=False,
                 ))
 
         # Promotion actions (only visible during promotion)
@@ -453,7 +454,7 @@ class ChessGame(Game):
         other_items: list[MenuItem] = []
         for resolved in self.get_all_visible_actions(player):
             label = resolved.label
-            if not resolved.enabled:
+            if not resolved.enabled and resolved.action.show_disabled_label:
                 unavailable = Localization.get(user.locale, "visibility-unavailable")
                 label = f"{label}; {unavailable}"
             item = MenuItem(text=label, id=resolved.action.id, sound=resolved.sound)
