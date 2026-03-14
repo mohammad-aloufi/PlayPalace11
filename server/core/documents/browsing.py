@@ -1,5 +1,6 @@
 """Document browsing menus for the PlayPalace server."""
 
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -52,6 +53,10 @@ class DocumentBrowsingMixin:
             "delete_document_confirm": (self._handle_delete_document_confirm, (user, selection_id, state)),
             "document_edit_lang_menu": (self._handle_edit_lang_selection, (user, selection_id, state)),
             "add_translation_lang_menu": (self._handle_add_translation_lang_selection, (user, selection_id, state)),
+            "new_document_categories_menu": (self._handle_new_document_categories_selection, (user, selection_id, state)),
+            "category_settings_menu": (self._handle_category_settings_selection, (user, selection_id, state)),
+            "category_sort_menu": (self._handle_category_sort_selection, (user, selection_id, state)),
+            "delete_category_confirm": (self._handle_delete_category_confirm, (user, selection_id, state)),
         }
         # Include transcriber management handlers.
         handlers.update(self._get_transcriber_menu_handlers(user, selection_id, state))
@@ -76,6 +81,26 @@ class DocumentBrowsingMixin:
         if current_menu == "document_title_editbox":
             text = packet.get("text", "")
             await self._handle_document_title_editbox(user, text, state)
+            return True
+
+        if current_menu == "new_document_slug_editbox":
+            text = packet.get("text", "")
+            self._handle_new_document_slug(user, text, state)
+            return True
+
+        if current_menu == "new_category_slug_editbox":
+            text = packet.get("text", "")
+            self._handle_new_category_slug(user, text, state)
+            return True
+
+        if current_menu == "new_category_name_editbox":
+            text = packet.get("text", "")
+            self._handle_new_category_name(user, text, state)
+            return True
+
+        if current_menu == "rename_category_editbox":
+            text = packet.get("text", "")
+            self._handle_rename_category(user, text, state)
             return True
 
         return False
@@ -121,22 +146,51 @@ class DocumentBrowsingMixin:
     def _show_documents_menu(self, user: NetworkUser) -> None:
         """Show the documents category menu."""
         categories = self._documents.get_categories(user.locale)
+        counts = self._documents.get_category_document_counts()
+        is_admin = self._is_admin(user)
+        show_empty = is_admin or self._is_transcriber(user.username)
+
         items = []
+
+        # "All documents" first
+        all_count = counts.get(None, 0)
+        all_label = Localization.get(user.locale, "documents-all")
+        items.append(
+            MenuItem(text=f"{all_label} ({all_count})", id="all")
+        )
+
+        # Real categories
         for cat in categories:
+            cat_count = counts.get(cat["slug"], 0)
+            if cat_count == 0 and not show_empty:
+                continue
             items.append(
-                MenuItem(text=cat["name"], id=f"cat_{cat['slug']}")
+                MenuItem(
+                    text=f"{cat['name']} ({cat_count})",
+                    id=f"cat_{cat['slug']}",
+                )
             )
+
+        # "Uncategorized" at the bottom
+        uncat_count = counts.get("", 0)
+        uncat_label = Localization.get(user.locale, "documents-uncategorized")
         items.append(
-            MenuItem(
-                text=Localization.get(user.locale, "documents-all"), id="all"
-            )
+            MenuItem(text=f"{uncat_label} ({uncat_count})", id="uncategorized")
         )
-        items.append(
-            MenuItem(
-                text=Localization.get(user.locale, "documents-uncategorized"),
-                id="uncategorized",
+
+        if is_admin:
+            items.append(
+                MenuItem(
+                    text=Localization.get(user.locale, "documents-new-document"),
+                    id="new_document",
+                )
             )
-        )
+            items.append(
+                MenuItem(
+                    text=Localization.get(user.locale, "documents-new-category"),
+                    id="new_category",
+                )
+            )
         items.append(
             MenuItem(
                 text=Localization.get(user.locale, "transcribers-by-language"),
@@ -170,6 +224,10 @@ class DocumentBrowsingMixin:
             self._show_documents_list(user, None)
         elif selection_id == "uncategorized":
             self._show_documents_list(user, "")
+        elif selection_id == "new_document":
+            self._show_new_document_categories(user)
+        elif selection_id == "new_category":
+            self._show_new_category_slug_editbox(user)
         elif selection_id == "transcribers_by_language":
             self._show_transcribers_by_language(user)
         elif selection_id == "transcribers_by_user":
@@ -181,15 +239,41 @@ class DocumentBrowsingMixin:
     def _show_documents_list(self, user: NetworkUser, category_slug: str | None) -> None:
         """Show the list of documents in a category."""
         documents = self._documents.get_documents_in_category(category_slug, user.locale)
-        if not documents:
-            user.speak_l("documents-no-documents")
-            return
+        is_real_category = category_slug is not None and category_slug != ""
+        is_admin = self._is_admin(user)
+        is_transcriber = self._is_transcriber(user.username)
 
         items = []
         for doc in documents:
             items.append(
                 MenuItem(text=doc["title"], id=f"doc_{doc['folder_name']}")
             )
+
+        if not items:
+            user.speak_l("documents-no-documents")
+
+        # Category management items for real categories.
+        if is_real_category and (is_transcriber or is_admin):
+            items.append(
+                MenuItem(
+                    text=Localization.get(user.locale, "documents-rename-category"),
+                    id="rename_category",
+                )
+            )
+        if is_real_category and is_admin:
+            items.append(
+                MenuItem(
+                    text=Localization.get(user.locale, "documents-category-settings"),
+                    id="category_settings",
+                )
+            )
+            items.append(
+                MenuItem(
+                    text=Localization.get(user.locale, "documents-delete-category"),
+                    id="delete_category",
+                )
+            )
+
         items.append(
             MenuItem(text=Localization.get(user.locale, "back"), id="back")
         )
@@ -208,8 +292,15 @@ class DocumentBrowsingMixin:
         self, user: NetworkUser, selection_id: str, state: dict
     ) -> None:
         """Handle document list menu selection."""
+        category_slug = state.get("category_slug")
         if selection_id == "back":
             self._show_documents_menu(user)
+        elif selection_id == "rename_category":
+            self._show_rename_category_editbox(user, category_slug)
+        elif selection_id == "category_settings":
+            self._show_category_settings(user, category_slug)
+        elif selection_id == "delete_category":
+            self._show_delete_category_confirm(user, category_slug)
         elif selection_id.startswith("doc_"):
             folder_name = selection_id[4:]
             if self._is_transcriber(user.username) or self._is_admin(user):
@@ -481,18 +572,28 @@ class DocumentBrowsingMixin:
         Supports multiple flows via ``state["flow"]``:
         - ``"change_title"`` (default): save title, return to settings.
         - ``"add_translation"``: store title, open editor for content entry.
+        - ``"new_document"``: store title, open editor for content entry.
         """
         folder_name = state.get("folder_name", "")
         locale_code = state.get("locale_code", "")
         flow = state.get("flow", "change_title")
 
         if not value.strip():
-            # Empty/cancelled — return to settings
-            self._show_document_settings(user, folder_name, state)
+            # Empty/cancelled — return to appropriate menu
+            if flow == "new_document":
+                self._show_documents_menu(user)
+            else:
+                self._show_document_settings(user, folder_name, state)
             return
 
         title = value.strip()
-        if flow == "add_translation":
+        if flow == "new_document":
+            # Slug was already validated in the slug editbox step.
+            self._open_document_editor(
+                user, folder_name, locale_code, state,
+                flow="new_document", pending_title=title,
+            )
+        elif flow == "add_translation":
             self._open_document_editor(
                 user, folder_name, locale_code, state,
                 flow="add_translation", pending_title=title,
@@ -1013,55 +1114,64 @@ class DocumentBrowsingMixin:
 
         Args:
             flow: ``"edit"`` for editing existing content,
-                  ``"add_translation"`` for a new translation.
-            pending_title: Title for the new translation (add_translation only).
+                  ``"add_translation"`` for a new translation,
+                  ``"new_document"`` for creating a new document.
+            pending_title: Title for the new translation/document.
         """
-        meta = self._documents.get_document_metadata(folder_name)
-        if meta is None:
-            self._show_document_actions(user, folder_name, state)
-            return
-
-        # Acquire edit lock
-        lock_owner = self._documents.acquire_edit_lock(
-            folder_name, locale_code, user.username,
-        )
-        if lock_owner:
-            user.speak_l("documents-locked", username=lock_owner)
-            if flow == "add_translation":
-                self._show_document_settings(user, folder_name, state)
-            else:
-                self._show_document_actions(user, folder_name, state)
-            return
-
-        # Load content
-        if flow == "add_translation":
+        if flow == "new_document":
+            # Document doesn't exist yet — no metadata, lock, or content.
             content = ""
+            source_content = None
+            source_label = None
+            title = pending_title or folder_name
         else:
-            content = self._documents.get_document_content(
-                folder_name, locale_code,
-            ) or ""
+            meta = self._documents.get_document_metadata(folder_name)
+            if meta is None:
+                self._show_document_actions(user, folder_name, state)
+                return
 
-        # Source reference for non-source locales
-        source_locale = meta.get("source_locale", "en")
-        source_content = None
-        source_label = None
-        if locale_code != source_locale:
-            source_content = self._documents.get_document_content(
-                folder_name, source_locale,
+            # Acquire edit lock
+            lock_owner = self._documents.acquire_edit_lock(
+                folder_name, locale_code, user.username,
             )
-            if source_content:
-                source_lang = Localization.get(
-                    user.locale, f"language-{source_locale}",
+            if lock_owner:
+                user.speak_l("documents-locked", username=lock_owner)
+                if flow == "add_translation":
+                    self._show_document_settings(user, folder_name, state)
+                else:
+                    self._show_document_actions(user, folder_name, state)
+                return
+
+            # Load content
+            if flow == "add_translation":
+                content = ""
+            else:
+                content = self._documents.get_document_content(
+                    folder_name, locale_code,
+                ) or ""
+
+            # Source reference for non-source locales
+            source_locale = meta.get("source_locale", "en")
+            source_content = None
+            source_label = None
+            if locale_code != source_locale:
+                source_content = self._documents.get_document_content(
+                    folder_name, source_locale,
                 )
-                source_label = Localization.get(
-                    user.locale, "documents-source-label",
-                    language=source_lang,
-                )
+                if source_content:
+                    source_lang = Localization.get(
+                        user.locale, f"language-{source_locale}",
+                    )
+                    source_label = Localization.get(
+                        user.locale, "documents-source-label",
+                        language=source_lang,
+                    )
+
+            title = pending_title or self._get_document_title(
+                folder_name, locale_code,
+            )
 
         # Build prompt and content label
-        title = pending_title or self._get_document_title(
-            folder_name, locale_code,
-        )
         lang_name = Localization.get(user.locale, f"language-{locale_code}")
         prompt = Localization.get(
             user.locale, "documents-editor-prompt",
@@ -1086,6 +1196,7 @@ class DocumentBrowsingMixin:
             "folder_name": folder_name,
             "locale_code": locale_code,
             "category_slug": state.get("category_slug"),
+            "selected_categories": state.get("selected_categories", []),
             "flow": flow,
             "pending_title": pending_title,
             "dialog_id": dialog_id,
@@ -1107,6 +1218,20 @@ class DocumentBrowsingMixin:
             return
 
         action = packet.get("action", "cancel")
+
+        if flow == "new_document":
+            # Creating a brand-new document — no lock was acquired.
+            if action == "save":
+                content = packet.get("content", "")
+                pending_title = state.get("pending_title", "")
+                selected_categories = state.get("selected_categories", [])
+                self._documents.create_document(
+                    folder_name, selected_categories, locale_code,
+                    pending_title, content,
+                )
+                user.speak_l("documents-document-created")
+            self._show_documents_menu(user)
+            return
 
         # Guard against the document or translation being removed while
         # the editor was open (e.g. an admin deleted it on the backend,
@@ -1151,3 +1276,353 @@ class DocumentBrowsingMixin:
             self._show_document_settings(user, folder_name, state)
         else:
             self._show_document_actions(user, folder_name, state)
+
+    # ------------------------------------------------------------------
+    # New document creation
+    # ------------------------------------------------------------------
+
+    def _show_new_document_categories(
+        self, user: NetworkUser, focus_slug: str | None = None,
+    ) -> None:
+        """Show category toggle list for a new document.
+
+        If there are no categories, skips straight to the title editbox.
+        """
+        state = self._user_states.get(user.username, {})
+        selected = set(state.get("selected_categories", []))
+
+        all_cats = self._documents.get_categories(user.locale)
+
+        # No categories — skip straight to slug.
+        if not all_cats:
+            new_state = {"selected_categories": []}
+            self._show_new_document_slug_editbox(user, new_state)
+            return
+
+        on_label = Localization.get(user.locale, "option-on")
+        off_label = Localization.get(user.locale, "option-off")
+
+        items = []
+        focus_position = 1
+        for cat in all_cats:
+            included = cat["slug"] in selected
+            status = on_label if included else off_label
+            items.append(
+                MenuItem(
+                    text=f"{cat['name']} {status}",
+                    id=f"cat_{cat['slug']}",
+                )
+            )
+            if cat["slug"] == focus_slug:
+                focus_position = len(items)
+
+        items.append(
+            MenuItem(
+                text=Localization.get(user.locale, "done"), id="done"
+            )
+        )
+        items.append(
+            MenuItem(text=Localization.get(user.locale, "back"), id="back")
+        )
+
+        # Speak the prompt on first display (no focus_slug means fresh entry).
+        if focus_slug is None:
+            user.speak_l("documents-select-categories")
+
+        user.show_menu(
+            "new_document_categories_menu",
+            items,
+            multiletter=True,
+            escape_behavior=EscapeBehavior.SELECT_LAST,
+            position=focus_position,
+        )
+        self._user_states[user.username] = {
+            "menu": "new_document_categories_menu",
+            "selected_categories": list(selected),
+        }
+
+    async def _handle_new_document_categories_selection(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle category toggle/done/back for new document creation."""
+        if selection_id == "back":
+            self._show_documents_menu(user)
+        elif selection_id == "done":
+            self._show_new_document_slug_editbox(user, state)
+        elif selection_id.startswith("cat_"):
+            slug = selection_id[4:]
+            selected = list(state.get("selected_categories", []))
+            if slug in selected:
+                selected.remove(slug)
+                user.play_sound("checkbox_list_off.wav")
+            else:
+                selected.append(slug)
+                user.play_sound("checkbox_list_on.wav")
+            state["selected_categories"] = selected
+            self._user_states[user.username]["selected_categories"] = selected
+            self._show_new_document_categories(user, focus_slug=slug)
+
+    def _show_new_document_slug_editbox(
+        self, user: NetworkUser, state: dict
+    ) -> None:
+        """Show the slug editbox for a new document."""
+        prompt = Localization.get(
+            user.locale, "documents-new-document-slug-prompt",
+        )
+        user.show_editbox("new_document_slug_editbox", prompt)
+        self._user_states[user.username] = {
+            "menu": "new_document_slug_editbox",
+            "selected_categories": state.get("selected_categories", []),
+        }
+
+    def _handle_new_document_slug(
+        self, user: NetworkUser, value: str, state: dict
+    ) -> None:
+        """Handle slug editbox submission for a new document."""
+        if not value.strip():
+            self._show_documents_menu(user)
+            return
+
+        slug = value.strip().lower().replace(" ", "_")
+        if not re.fullmatch(r"[a-z0-9_]+", slug):
+            user.speak_l("documents-slug-invalid")
+            self._show_new_document_slug_editbox(user, state)
+            return
+
+        if self._documents.get_document_metadata(slug) is not None:
+            user.speak_l("documents-slug-exists")
+            self._show_new_document_slug_editbox(user, state)
+            return
+
+        # Proceed to title editbox.
+        lang_name = Localization.get(user.locale, f"language-{user.locale}")
+        prompt = Localization.get(
+            user.locale, "documents-title-prompt", language=lang_name,
+        )
+        user.show_editbox("document_title_editbox", prompt)
+        self._user_states[user.username] = {
+            "menu": "document_title_editbox",
+            "folder_name": slug,
+            "locale_code": user.locale,
+            "selected_categories": state.get("selected_categories", []),
+            "flow": "new_document",
+        }
+
+    # ------------------------------------------------------------------
+    # New category creation
+    # ------------------------------------------------------------------
+
+    def _show_new_category_slug_editbox(self, user: NetworkUser) -> None:
+        """Show the slug editbox for a new category."""
+        prompt = Localization.get(
+            user.locale, "documents-new-category-slug-prompt",
+        )
+        user.show_editbox("new_category_slug_editbox", prompt)
+        self._user_states[user.username] = {
+            "menu": "new_category_slug_editbox",
+        }
+
+    def _handle_new_category_slug(
+        self, user: NetworkUser, value: str, state: dict
+    ) -> None:
+        """Handle slug editbox submission for a new category."""
+        if not value.strip():
+            self._show_documents_menu(user)
+            return
+
+        slug = value.strip().lower().replace(" ", "_")
+        if not re.fullmatch(r"[a-z0-9_]+", slug):
+            user.speak_l("documents-slug-invalid")
+            self._show_new_category_slug_editbox(user)
+            return
+
+        # Check for existing category with this slug.
+        categories = self._documents.get_categories(user.locale)
+        if any(cat["slug"] == slug for cat in categories):
+            user.speak_l("documents-slug-exists-category")
+            self._show_new_category_slug_editbox(user)
+            return
+
+        lang_name = Localization.get(user.locale, f"language-{user.locale}")
+        prompt = Localization.get(
+            user.locale, "documents-category-name-prompt",
+            language=lang_name,
+        )
+        user.show_editbox(
+            "new_category_name_editbox", prompt,
+        )
+        self._user_states[user.username] = {
+            "menu": "new_category_name_editbox",
+            "category_slug": slug,
+        }
+
+    def _handle_new_category_name(
+        self, user: NetworkUser, value: str, state: dict
+    ) -> None:
+        """Handle name editbox submission for a new category."""
+        slug = state.get("category_slug", "")
+        if not value.strip():
+            self._show_documents_menu(user)
+            return
+
+        name = value.strip()
+        self._documents.create_category(slug, name, user.locale)
+        user.speak_l("documents-category-created")
+        self._show_documents_menu(user)
+
+    # ------------------------------------------------------------------
+    # Category management (rename, settings, delete)
+    # ------------------------------------------------------------------
+
+    def _show_rename_category_editbox(
+        self, user: NetworkUser, category_slug: str,
+    ) -> None:
+        """Show the rename editbox for a category."""
+        # Get current display name as default value
+        categories = self._documents.get_categories(user.locale)
+        current_name = ""
+        for cat in categories:
+            if cat["slug"] == category_slug:
+                current_name = cat["name"]
+                break
+
+        lang_name = Localization.get(user.locale, f"language-{user.locale}")
+        prompt = Localization.get(
+            user.locale, "documents-category-name-prompt",
+            language=lang_name,
+        )
+        user.show_editbox(
+            "rename_category_editbox", prompt,
+            default_value=current_name,
+        )
+        self._user_states[user.username] = {
+            "menu": "rename_category_editbox",
+            "category_slug": category_slug,
+        }
+
+    def _handle_rename_category(
+        self, user: NetworkUser, value: str, state: dict
+    ) -> None:
+        """Handle rename editbox submission for a category."""
+        slug = state.get("category_slug", "")
+        if not value.strip():
+            self._show_documents_list(user, slug)
+            return
+
+        name = value.strip()
+        self._documents.rename_category(slug, name, user.locale)
+        user.speak_l("documents-category-renamed")
+        self._show_documents_list(user, slug)
+
+    def _show_category_settings(
+        self, user: NetworkUser, category_slug: str,
+    ) -> None:
+        """Show category settings submenu (sort method)."""
+        current_sort = self._documents.get_category_sort(category_slug)
+        sort_label = Localization.get(
+            user.locale, f"documents-sort-{current_sort.replace('_', '-')}",
+        )
+        sort_text = Localization.get(
+            user.locale, "documents-sort-method",
+        )
+        items = [
+            MenuItem(
+                text=f"{sort_text}: {sort_label}",
+                id="sort_method",
+            ),
+            MenuItem(
+                text=Localization.get(user.locale, "back"), id="back",
+            ),
+        ]
+        user.show_menu(
+            "category_settings_menu",
+            items,
+            multiletter=True,
+            escape_behavior=EscapeBehavior.SELECT_LAST,
+        )
+        self._user_states[user.username] = {
+            "menu": "category_settings_menu",
+            "category_slug": category_slug,
+        }
+
+    async def _handle_category_settings_selection(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle category settings submenu selection."""
+        category_slug = state.get("category_slug", "")
+        if selection_id == "back":
+            self._show_documents_list(user, category_slug)
+        elif selection_id == "sort_method":
+            self._show_category_sort_menu(user, category_slug)
+
+    def _show_category_sort_menu(
+        self, user: NetworkUser, category_slug: str,
+    ) -> None:
+        """Show the sort method selection menu."""
+        current_sort = self._documents.get_category_sort(category_slug)
+        sort_options = ["alphabetical", "date_created", "date_modified"]
+
+        items = []
+        focus_position = 1
+        for sort_method in sort_options:
+            label = Localization.get(
+                user.locale,
+                f"documents-sort-{sort_method.replace('_', '-')}",
+            )
+            if sort_method == current_sort:
+                label = f"* {label}"
+                focus_position = len(items) + 1
+            items.append(
+                MenuItem(text=label, id=sort_method)
+            )
+        items.append(
+            MenuItem(text=Localization.get(user.locale, "back"), id="back")
+        )
+        user.show_menu(
+            "category_sort_menu",
+            items,
+            multiletter=True,
+            escape_behavior=EscapeBehavior.SELECT_LAST,
+            position=focus_position,
+        )
+        self._user_states[user.username] = {
+            "menu": "category_sort_menu",
+            "category_slug": category_slug,
+        }
+
+    async def _handle_category_sort_selection(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle sort method selection."""
+        category_slug = state.get("category_slug", "")
+        if selection_id == "back":
+            self._show_category_settings(user, category_slug)
+        elif selection_id in ("alphabetical", "date_created", "date_modified"):
+            self._documents.set_category_sort(category_slug, selection_id)
+            user.speak_l("documents-sort-changed")
+            self._show_category_settings(user, category_slug)
+
+    def _show_delete_category_confirm(
+        self, user: NetworkUser, category_slug: str,
+    ) -> None:
+        """Show yes/no confirmation for deleting a category."""
+        question = Localization.get(
+            user.locale, "documents-delete-category-confirm",
+        )
+        show_yes_no_menu(user, "delete_category_confirm", question)
+        self._user_states[user.username] = {
+            "menu": "delete_category_confirm",
+            "category_slug": category_slug,
+        }
+
+    async def _handle_delete_category_confirm(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle delete-category confirmation."""
+        category_slug = state.get("category_slug", "")
+        if selection_id == "yes":
+            self._documents.delete_category(category_slug)
+            user.speak_l("documents-category-deleted")
+            self._show_documents_menu(user)
+        else:
+            self._show_documents_list(user, category_slug)

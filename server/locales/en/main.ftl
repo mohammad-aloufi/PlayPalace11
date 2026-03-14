@@ -412,6 +412,32 @@ documents-editor-prompt = Edit: { $title } ({ $language })
 documents-source-label = { $language } (source)
 documents-content-label = { $language } Contents
 
+# Document & category creation
+documents-new-document = New document
+documents-new-category = New category
+documents-select-categories = Select categories for the new document.
+documents-new-document-slug-prompt = Enter the sluggified title in English. This is the internal identifier for the document, for example my_game_rules:
+documents-document-created = Document created.
+documents-slug-exists = A document with this identifier already exists.
+documents-slug-invalid = Invalid slug. Use only lowercase letters, numbers, and underscores.
+documents-new-category-slug-prompt = Enter the sluggified name in English. This is the internal identifier for the category, for example game_rules:
+documents-category-created = Category created.
+documents-slug-exists-category = A category with this slug already exists.
+
+# Category management
+documents-rename-category = Rename category
+documents-category-settings = Category settings
+documents-delete-category = Delete category
+documents-category-name-prompt = Enter the display name for this category for the { $language } translation:
+documents-category-renamed = Category renamed.
+documents-sort-method = Sort method
+documents-sort-alphabetical = Alphabetical
+documents-sort-date-created = Date created
+documents-sort-date-modified = Date modified
+documents-sort-changed = Sort method updated.
+documents-delete-category-confirm = Delete this category? Documents will not be deleted, but will lose this category association.
+documents-category-deleted = Category deleted.
+
 # Transcriber management
 transcribers-by-language = View transcribers by language
 transcribers-by-user = View transcribers by user

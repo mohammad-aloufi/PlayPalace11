@@ -88,6 +88,22 @@ New document menus or editboxes should be added to these methods (or to `_get_tr
 - **Server dispatch**: `_handle_document_editor_packet` in `server.py` forwards to `_handle_document_editor_response` on the browsing mixin
 - 4 new locale strings: `documents-locked`, `documents-content-saved`, `documents-editor-prompt`, `documents-source-label`
 
+### Document & Category Creation (session 7)
+- **New document flow**: admin selects categories (toggle list with Done/Back) → title editbox → auto-slugify → collision check → document editor dialog → `create_document()`
+- **New category flow**: slug editbox → display name editbox → `create_category()`
+- **Category management** in documents list menu (for real categories):
+  - Rename category (transcriber/admin): editbox with current name → `rename_category(slug, name, locale)`
+  - Category settings (admin): sort method submenu (alphabetical, date created, date modified) → `set_category_sort()`
+  - Delete category (admin): yes/no confirmation → `delete_category()` removes category and cleans up document associations
+- **New DocumentManager methods**: `slugify()` (static), `delete_category()`, `rename_category()`, `set_category_sort()`, `get_category_sort()`
+- **Updated `get_documents_in_category()`**: now respects category sort method (alphabetical/date_created/date_modified)
+- **Shared title editbox handler**: extended with `"new_document"` flow — slugifies title, checks collision, opens editor
+- **Shared document editor**: extended with `"new_document"` flow — no lock/metadata needed, creates document on save
+- 4 new dispatch menu entries: `new_document_categories_menu`, `category_settings_menu`, `category_sort_menu`, `delete_category_confirm`
+- 3 new editbox handlers: `new_category_slug_editbox`, `new_category_name_editbox`, `rename_category_editbox`
+- 16 new locale strings for creation flows, slug validation, category management
+- 21 new tests: slugify (9), delete_category (4), rename_category (3), category_sort (5)
+
 ---
 
 ## Chunk 4: Document Actions (Admin & Transcriber)
@@ -201,7 +217,7 @@ Create a `<dialog>` element for the document editor. Layout:
 
 ---
 
-## Chunk 6: Document & Category Creation
+## Chunk 6: Document & Category Creation ✓
 
 Admin flows for creating new documents and categories.
 
@@ -214,8 +230,9 @@ Admin flows for creating new documents and categories.
 - Tests for creation flows and edge cases (duplicate slugs, empty input)
 - See Chunk 5 design notes for all shared handlers that must be reused here
 
-### Files to modify
-- `server/core/documents/browsing.py` — creation handlers (or a new `document_creation.py` mixin); add new menu/editbox entries to `_get_document_menu_handlers` and `_handle_document_editbox`
-- `server/core/documents/manager.py` — possibly add slug generation helper, delete methods
-- `server/locales/en/main.ftl` — locale strings
+### Files modified
+- `server/core/documents/browsing.py` — creation handlers, category management handlers; new menu/editbox entries in `_get_document_menu_handlers` and `_handle_document_editbox`
+- `server/core/documents/manager.py` — `slugify()`, `delete_category()`, `rename_category()`, `set_category_sort()`, `get_category_sort()`; updated `get_documents_in_category()` with sort support
+- `server/locales/en/main.ftl` — 16 new locale strings
+- `server/tests/test_document_manager.py` — 21 new tests
 - **Not** `server/core/server.py` — see Architecture Rule above

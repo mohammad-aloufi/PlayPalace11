@@ -389,3 +389,150 @@ class TestCreateOperations:
         manager.create_category("faq", "FAQ", "en")
         result = manager.create_category("faq", "FAQ 2", "en")
         assert result is False
+
+
+# ------------------------------------------------------------------
+# slugify
+# ------------------------------------------------------------------
+
+
+class TestSlugify:
+    def test_basic_title(self):
+        assert DocumentManager.slugify("Uno Rules") == "uno_rules"
+
+    def test_special_characters(self):
+        assert DocumentManager.slugify("FAQ & Tips!") == "faq_tips"
+
+    def test_hyphens_become_underscores(self):
+        assert DocumentManager.slugify("how-to-play") == "how_to_play"
+
+    def test_multiple_spaces_collapse(self):
+        assert DocumentManager.slugify("Game   Rules   2") == "game_rules_2"
+
+    def test_leading_trailing_stripped(self):
+        assert DocumentManager.slugify("  Hello World  ") == "hello_world"
+
+    def test_empty_string(self):
+        assert DocumentManager.slugify("") == ""
+
+    def test_only_special_chars(self):
+        assert DocumentManager.slugify("!!!") == ""
+
+    def test_unicode_stripped(self):
+        assert DocumentManager.slugify("Café Rules") == "cafe_rules"
+
+    def test_numbers_preserved(self):
+        assert DocumentManager.slugify("Chapter 3") == "chapter_3"
+
+
+# ------------------------------------------------------------------
+# delete_category
+# ------------------------------------------------------------------
+
+
+class TestDeleteCategory:
+    def test_delete_existing_category(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("news", "News", "en")
+        result = manager.delete_category("news")
+        assert result is True
+        cats = manager.get_categories("en")
+        assert not any(c["slug"] == "news" for c in cats)
+
+    def test_delete_nonexistent_category(self, manager):
+        manager.load()
+        assert manager.delete_category("nope") is False
+
+    def test_delete_category_removes_from_documents(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("rules", "Rules", "en")
+        manager.create_document("doc1", ["rules"], "en", "Doc", "content")
+        manager.delete_category("rules")
+        meta = manager.get_document_metadata("doc1")
+        assert "rules" not in meta["categories"]
+
+    def test_delete_category_persists(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("temp", "Temp", "en")
+        manager.delete_category("temp")
+        # Reload from disk
+        manager2 = DocumentManager(docs_dir)
+        manager2.load()
+        cats = manager2.get_categories("en")
+        assert not any(c["slug"] == "temp" for c in cats)
+
+
+# ------------------------------------------------------------------
+# rename_category
+# ------------------------------------------------------------------
+
+
+class TestRenameCategory:
+    def test_rename_category(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("faq", "FAQ", "en")
+        result = manager.rename_category("faq", "Frequently Asked Questions", "en")
+        assert result is True
+        cats = manager.get_categories("en")
+        faq = next(c for c in cats if c["slug"] == "faq")
+        assert faq["name"] == "Frequently Asked Questions"
+
+    def test_rename_adds_locale(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("news", "News", "en")
+        manager.rename_category("news", "Noticias", "es")
+        cats = manager.get_categories("es")
+        news = next(c for c in cats if c["slug"] == "news")
+        assert news["name"] == "Noticias"
+
+    def test_rename_nonexistent(self, manager):
+        manager.load()
+        assert manager.rename_category("nope", "Name", "en") is False
+
+
+# ------------------------------------------------------------------
+# set_category_sort / get_category_sort
+# ------------------------------------------------------------------
+
+
+class TestCategorySort:
+    def test_default_sort(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("rules", "Rules", "en")
+        assert manager.get_category_sort("rules") == "alphabetical"
+
+    def test_set_sort_method(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("rules", "Rules", "en")
+        result = manager.set_category_sort("rules", "date_modified")
+        assert result is True
+        assert manager.get_category_sort("rules") == "date_modified"
+
+    def test_set_sort_nonexistent(self, manager):
+        manager.load()
+        assert manager.set_category_sort("nope", "alphabetical") is False
+
+    def test_get_sort_nonexistent_returns_default(self, manager):
+        manager.load()
+        assert manager.get_category_sort("nope") == "alphabetical"
+
+    def test_sort_by_date_created(self, manager, docs_dir):
+        manager.load()
+        manager.create_category("rules", "Rules", "en")
+        manager.set_category_sort("rules", "date_created")
+        manager.create_document(
+            "old_doc", ["rules"], "en", "Old Doc", "old",
+        )
+        # Manually set timestamps to control ordering
+        meta = manager.get_document_metadata("old_doc")
+        meta["locales"]["en"]["created"] = "2026-01-01T00:00:00Z"
+        manager.create_document(
+            "new_doc", ["rules"], "en", "New Doc", "new",
+        )
+        meta2 = manager.get_document_metadata("new_doc")
+        meta2["locales"]["en"]["created"] = "2026-06-01T00:00:00Z"
+
+        docs = manager.get_documents_in_category("rules", "en")
+        # date_created sorts newest first
+        assert docs[0]["folder_name"] == "new_doc"
+        assert docs[1]["folder_name"] == "old_doc"

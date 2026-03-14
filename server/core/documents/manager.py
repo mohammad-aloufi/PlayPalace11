@@ -2,8 +2,10 @@
 
 import json
 import logging
+import re
 import shutil
 import time
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -117,6 +119,21 @@ class DocumentManager:
         result.sort(key=lambda c: c["name"].lower())
         return result
 
+    def get_category_document_counts(self) -> dict[str | None, int]:
+        """Return document counts per category in a single pass.
+
+        Keys are category slugs, plus ``None`` for all documents and
+        ``""`` for uncategorized.
+        """
+        counts: dict[str | None, int] = {None: len(self._documents), "": 0}
+        for meta in self._documents.values():
+            cats = meta.get("categories", [])
+            if not cats:
+                counts[""] += 1
+            for slug in cats:
+                counts[slug] = counts.get(slug, 0) + 1
+        return counts
+
     def get_documents_in_category(
         self, category_slug: str | None, locale: str
     ) -> list[dict]:
@@ -143,9 +160,23 @@ class DocumentManager:
 
             titles = meta.get("titles", {})
             title = titles.get(locale) or titles.get("en") or folder_name
-            results.append({"folder_name": folder_name, "title": title})
+            # Include sort-relevant timestamps from source locale.
+            source = meta.get("source_locale", "en")
+            loc_info = meta.get("locales", {}).get(source, {})
+            results.append({
+                "folder_name": folder_name,
+                "title": title,
+                "created": loc_info.get("created", ""),
+                "modified": loc_info.get("modified_contents", ""),
+            })
 
-        results.sort(key=lambda d: d["title"].lower())
+        sort_method = self.get_category_sort(category_slug) if category_slug else "alphabetical"
+        if sort_method == "date_created":
+            results.sort(key=lambda d: d["created"], reverse=True)
+        elif sort_method == "date_modified":
+            results.sort(key=lambda d: d["modified"], reverse=True)
+        else:
+            results.sort(key=lambda d: d["title"].lower())
         return results
 
     def get_document_metadata(self, folder_name: str) -> dict | None:
@@ -397,6 +428,70 @@ class DocumentManager:
         }
         self._save_root_metadata()
         return True
+
+    def delete_category(self, slug: str) -> bool:
+        """Delete a category and remove it from all documents.
+
+        Returns ``False`` if the category doesn't exist.
+        """
+        if slug not in self._categories:
+            return False
+        del self._categories[slug]
+        self._save_root_metadata()
+        # Remove from all documents that reference this category.
+        for folder_name, meta in self._documents.items():
+            cats = meta.get("categories", [])
+            if slug in cats:
+                cats.remove(slug)
+                self._save_document_metadata(folder_name)
+        return True
+
+    def rename_category(self, slug: str, name: str, locale: str) -> bool:
+        """Update the display name for a category in a specific locale.
+
+        Returns ``False`` if the category doesn't exist.
+        """
+        cat = self._categories.get(slug)
+        if cat is None:
+            return False
+        cat.setdefault("name", {})[locale] = name
+        self._save_root_metadata()
+        return True
+
+    def set_category_sort(self, slug: str, sort_method: str) -> bool:
+        """Update the sort method for a category.
+
+        Returns ``False`` if the category doesn't exist.
+        """
+        cat = self._categories.get(slug)
+        if cat is None:
+            return False
+        cat["sort"] = sort_method
+        self._save_root_metadata()
+        return True
+
+    def get_category_sort(self, slug: str) -> str:
+        """Return the sort method for a category (default ``"alphabetical"``)."""
+        cat = self._categories.get(slug)
+        if cat is None:
+            return "alphabetical"
+        return cat.get("sort", "alphabetical")
+
+    @staticmethod
+    def slugify(title: str) -> str:
+        """Convert a document title to a folder-name slug.
+
+        Lowercases, replaces whitespace/hyphens with underscores, strips
+        non-ASCII and special characters, and collapses runs of underscores.
+        """
+        slug = unicodedata.normalize("NFKD", title)
+        slug = slug.encode("ascii", "ignore").decode("ascii")
+        slug = slug.lower()
+        slug = re.sub(r"[\s\-]+", "_", slug)
+        slug = re.sub(r"[^\w]", "", slug)
+        slug = re.sub(r"_+", "_", slug)
+        slug = slug.strip("_")
+        return slug
 
     # ------------------------------------------------------------------
     # Edit locks
