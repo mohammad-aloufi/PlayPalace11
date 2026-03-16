@@ -87,18 +87,21 @@ class AuthManager:
 
         return AuthResult.SUCCESS
 
-    def register(self, username: str, password: str, approval: bool, locale: str = "en") -> bool:
+    def register(self, username: str, password: str, approval: bool, block_new_accounts: bool, locale: str = "en") -> bool:
         """Register a new user.
 
         Args:
             username: Username to create.
             password: Plaintext password.
-            approval: value of default_approval setting.
+            approval: value of auto_approve_new_accounts setting.
+            block_new_accounts: value of block_new_accounts setting.
             locale: Preferred locale.
 
         Returns:
             True if registration succeeded, False if username taken.
         """
+        if block_new_accounts:
+            return False
         if self._db.user_exists(username):
             return False
 

@@ -123,6 +123,7 @@ class Server(AdministrationMixin, DocumentBrowsingMixin, TranscriberRoleMixin):
         config_path: str | Path | None = None,
         preload_locales: bool = False,
         auto_approve_new_accounts: bool = False,
+        block_new_accounts: bool = False,
     ):
         """Initialize the server and core managers.
 
@@ -135,6 +136,7 @@ class Server(AdministrationMixin, DocumentBrowsingMixin, TranscriberRoleMixin):
             ssl_key: Optional SSL private key path for TLS.
             config_path: Optional config.toml path override.
             preload_locales: Whether to block startup while compiling all locales.
+            block_new_accounts: block new accounts from being registered
             auto_approve_new_accounts: Auto-approve new accounts (skip admin approval step)
         """
         self.host = host
@@ -176,6 +178,7 @@ class Server(AdministrationMixin, DocumentBrowsingMixin, TranscriberRoleMixin):
         self._ws_max_message_size = DEFAULT_WS_MAX_MESSAGE_BYTES
         self._config_path = Path(config_path) if config_path else get_default_config_path()
         self._allow_insecure_ws = False
+        self._block_new_accounts = block_new_accounts
         self._auto_approve_new_accounts = auto_approve_new_accounts
         self._preload_locales = preload_locales
         self._login_ip_limit = DEFAULT_LOGIN_ATTEMPTS_PER_MINUTE
@@ -367,6 +370,9 @@ class Server(AdministrationMixin, DocumentBrowsingMixin, TranscriberRoleMixin):
         if auth_cfg:
             self._auto_approve_new_accounts = _coerce_bool(
                 auth_cfg.get("auto_approve_new_accounts"), self._auto_approve_new_accounts
+            )
+            self._block_new_accounts = _coerce_bool(
+                auth_cfg.get("block_new_accounts"), self._block_new_accounts
             )
             self._username_min_length = _read_limit(auth_cfg, "username_min_length", self._username_min_length)
             self._username_max_length = _read_limit(
@@ -1275,8 +1281,21 @@ class Server(AdministrationMixin, DocumentBrowsingMixin, TranscriberRoleMixin):
                     needs_approval = tmpuser.approved
                 tmpuser=None
 
-                # Try to register
-                if not self._auth.register(username, password, approval=self._auto_approve_new_accounts, locale=locale):
+                # Try to register if accounts are not blocked
+                if self._block_new_accounts:
+                    error_message = Localization.get(locale, "accounts-blocked")
+                    await client.send({"type": "play_sound", "name": "accounterror.ogg"})
+                    await client.send({"type": "speak", "text": error_message, "buffer": "activity"})
+                    await client.send({
+                        "type": "disconnect",
+                        "reconnect": False,
+                        "show_message": True,
+                        "return_to_login": True,
+                        "message": error_message,
+                    })
+                    return
+
+                if not self._auth.register(username, password, block_new_accounts=self._block_new_accounts, approval=self._auto_approve_new_accounts, locale=locale):
                     self._record_login_failure(username)
                     # Registration failed (shouldn't happen if user not found, but handle anyway)
                     error_message = Localization.get(locale, "incorrect-username")
