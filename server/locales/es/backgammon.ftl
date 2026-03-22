@@ -2,10 +2,6 @@
 
 game-name-backgammon = Backgammon
 
-# Colores
-backgammon-color-red = rojo
-backgammon-color-white = blanco
-
 # Inicio de partida
 backgammon-game-started = { $red } juega con Rojo, { $white } juega con Blanco.
 backgammon-opening-roll = Tirada inicial: { $red } saca { $red_die }, { $white } saca { $white_die }.
