@@ -2,10 +2,6 @@
 
 game-name-backgammon = Backgammon
 
-# Colors
-backgammon-color-red = red
-backgammon-color-white = white
-
 # Game start
 backgammon-game-started = { $red } plays Red, { $white } plays White.
 backgammon-opening-roll = Opening roll: { $red } rolls { $red_die }, { $white } rolls { $white_die }.

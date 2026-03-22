@@ -1476,7 +1476,7 @@ class BackgammonGame(Game):
 
         cnt = abs(val)
         owner = "red" if val > 0 else "white"
-        owner_name = Localization.get(locale, f"backgammon-color-{owner}")
+        owner_name = Localization.get(locale, f"color-{owner}")
         key = "backgammon-point-occupied-selected" if selected else "backgammon-point-occupied"
         return Localization.get(locale, key, point=pn, color=owner_name, count=cnt)
 
