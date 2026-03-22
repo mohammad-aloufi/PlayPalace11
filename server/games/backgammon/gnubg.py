@@ -625,7 +625,7 @@ class GnubgProcess:
                 log.debug("GNUBG query skipped: no unused dice")
                 return None
 
-        hint_count = 20 if pick_worst else 1
+        hint_count = 999 if pick_worst else 1
         self._send_batch([
             *self._position_commands(state),
             f"set dice {unused_dice[0]} {unused_dice[1]}",
