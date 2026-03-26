@@ -1,7 +1,7 @@
 """Base game class and player dataclass."""
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 from abc import ABC, abstractmethod
 import threading
 
@@ -9,6 +9,7 @@ from mashumaro.mixins.json import DataClassJSONMixin
 from mashumaro.config import BaseConfig
 
 from server.core.users.base import User
+from server.core.users.bot import Bot
 from ..game_utils.actions import ActionSet
 from ..game_utils.options import (
     GameOptions as DeclarativeGameOptions,
@@ -76,6 +77,7 @@ class Player(DataClassJSONMixin):
     bot_think_ticks: int = 0  # Ticks until bot can act
     bot_pending_action: str | None = None  # Action to execute when ready
     bot_target: int | None = None  # Game-specific target (e.g., score to reach)
+    replaced_human: bool = False  # True if this slot was a human replaced by a bot
 
 
 # Re-export GameOptions from options module for backwards compatibility
@@ -208,6 +210,9 @@ class Game(
         """Return the type identifier for this game."""
         ...
 
+    #: User preferences this game is relevant to (for per-game overrides).
+    relevant_preferences: ClassVar[list[str]] = []
+
     @classmethod
     def get_name_key(cls) -> str:
         """Return the localization key for this game's name."""
@@ -296,6 +301,23 @@ class Game(
             return "game-error-invalid-team-mode"
 
         return None
+
+    def _sync_table_status(self) -> None:
+        """Synchronize table status with game status."""
+        if self._table:
+            self._table.status = self.status
+
+    def _replace_with_bot(self, player: "Player") -> None:
+        """Replace a human player with a bot (shared logic)."""
+        if self.status != "playing":
+            return
+
+        player.replaced_human = True
+        player.is_bot = True
+        self._users.pop(player.id, None)
+
+        bot_user = Bot(player.name, uuid=player.id)
+        self.attach_user(player.id, bot_user)
 
     @abstractmethod
     def on_start(self) -> None:

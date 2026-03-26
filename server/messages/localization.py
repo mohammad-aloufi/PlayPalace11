@@ -28,6 +28,7 @@ class Localization:
     _CACHE_VERSION = "1"
     _CACHE_DISABLE_ENV = "PLAYPALACE_DISABLE_LOCALE_CACHE"
     _CACHE_DIR_ENV = "PLAYPALACE_LOCALE_CACHE_DIR"
+    _enabled_locales: set[str] | None = None  # None = all locales
 
     @classmethod
     def set_warmup_active(cls, active: bool) -> None:
@@ -38,13 +39,23 @@ class Localization:
         return cls._warmup_active
 
     @classmethod
-    def init(cls, locales_dir: Path | str) -> None:
-        """Initialize the localization system with a locales directory."""
+    def init(cls, locales_dir: Path | str, *, enabled_locales: list[str] | None = None) -> None:
+        """Initialize the localization system with a locales directory.
+
+        Args:
+            locales_dir: Path to the locales directory.
+            enabled_locales: If set, only load these locales (plus ``en`` as
+                fallback).  ``None`` loads all locales.
+        """
         cls._locales_dir = Path(locales_dir)
         cls._bundles = {}
         disable_cache = os.environ.get(cls._CACHE_DISABLE_ENV, "").strip().lower()
         cls._cache_enabled = disable_cache not in {"1", "true", "yes", "on"}
         cls._cache_dir = None
+        if enabled_locales is not None:
+            cls._enabled_locales = {*enabled_locales, "en"}
+        else:
+            cls._enabled_locales = None
 
     @classmethod
     def preload_bundles(cls) -> None:
@@ -63,6 +74,8 @@ class Localization:
         found_locale = False
         for locale_dir in cls._locales_dir.iterdir():
             if not locale_dir.is_dir():
+                continue
+            if cls._enabled_locales is not None and locale_dir.name not in cls._enabled_locales:
                 continue
             found_locale = True
             try:
@@ -291,6 +304,7 @@ class Localization:
     def get_available_locale_codes(cls) -> list[str]:
         """Return sorted language codes from the locales directory.
 
+        Only returns locales that are enabled in the server configuration.
         Unlike :meth:`get_available_languages`, this only scans the
         filesystem and never triggers bundle compilation, so it is safe
         to call during warmup.
@@ -303,6 +317,7 @@ class Localization:
             locale_dir.name
             for locale_dir in cls._locales_dir.iterdir()
             if locale_dir.is_dir()
+            and (cls._enabled_locales is None or locale_dir.name in cls._enabled_locales)
         )
 
     @classmethod
@@ -329,11 +344,12 @@ class Localization:
 
         result = {}
 
-        # Get list of valid locale directories
+        # Get list of valid locale directories (filtered by enabled_locales)
         locales = [
             locale_dir.name
             for locale_dir in cls._locales_dir.iterdir()
             if locale_dir.is_dir()
+            and (cls._enabled_locales is None or locale_dir.name in cls._enabled_locales)
         ]
 
         for locale_code in sorted(locales):

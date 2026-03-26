@@ -1375,6 +1375,18 @@
             "default": null,
             "title": "Multiletter Enabled"
           },
+          "play_selection_sound": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Play Selection Sound"
+          },
           "position": {
             "anyOf": [
               {
@@ -1398,18 +1410,6 @@
             ],
             "default": null,
             "title": "Selection Id"
-          },
-          "play_selection_sound": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Play Selection Sound"
           },
           "type": {
             "const": "menu",

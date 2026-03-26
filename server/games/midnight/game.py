@@ -62,6 +62,8 @@ class MidnightGame(ActionGuardMixin, RoundBasedGameMixin, Game, DiceGameMixin):
     Highest score wins the round. First to win the most rounds wins the game.
     """
 
+    relevant_preferences = ["dice_keeping_style"]
+
     # Game-specific state
     players: list[MidnightPlayer] = field(default_factory=list)
     options: MidnightOptions = field(default_factory=MidnightOptions)

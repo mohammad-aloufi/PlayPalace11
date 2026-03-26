@@ -66,7 +66,7 @@ def server(tmp_path):
     return srv
 
 
-@pytest.mark.slow
+
 def test_save_tables_calls_db_and_manager(monkeypatch, server):
     tables_manager = DummyTablesManager()
     tables_manager.saved = [DummyTable("t1", "pig"), DummyTable("t2", "farkle")]
@@ -82,7 +82,7 @@ def test_save_tables_calls_db_and_manager(monkeypatch, server):
     assert saved_to_db == tables_manager.saved
 
 
-@pytest.mark.slow
+
 def test_load_tables_restores_games_and_clears_db(monkeypatch, server):
     dummy_game_json = json.dumps({"state": "dummy"})
     table_with_game = DummyTable("table-game", "test_game", game_json=dummy_game_json)

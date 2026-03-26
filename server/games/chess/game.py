@@ -199,33 +199,6 @@ class ChessGame(Game):
         self.play_sound(sound)
         return player
 
-    def _action_add_bot(self, player: Player, bot_name: str, action_id: str) -> None:
-        if not bot_name.strip():
-            from ...game_utils.lobby_actions_mixin import BOT_NAMES
-            bot_name = next(
-                (n for n in BOT_NAMES if n.lower() not in {x.name.lower() for x in self.players}),
-                None,
-            )
-            if not bot_name:
-                user = self.get_user(player)
-                if user:
-                    user.speak_l("no-bot-names-available")
-                return
-        bot_user = Bot(bot_name)
-        bot_player = self.add_player(bot_name, bot_user)
-        self.broadcast_l("table-joined", player=bot_player.name)
-        self.rebuild_all_menus()
-
-    def _action_remove_bot(self, player: Player, action_id: str) -> None:
-        for i in range(len(self.players) - 1, -1, -1):
-            if self.players[i].is_bot:
-                bot = self.players.pop(i)
-                self.player_action_sets.pop(bot.id, None)
-                self._users.pop(bot.id, None)
-                self.broadcast_l("table-left", player=bot.name)
-                self.play_sound("game_chess/botleave.ogg")
-                break
-        self.rebuild_all_menus()
 
     def _perform_leave_game(self, player: Player) -> None:
         if self.status == "playing" and not player.is_bot:

@@ -80,6 +80,7 @@ class Action(DataClassJSONMixin):
     get_sound: str | None = None  # Optional method name (e.g., "_get_roll_sound")
     input_request: MenuInput | EditboxInput | None = None
     show_in_actions_menu: bool = True
+    include_spectators: bool = False  # Whether spectators can see/execute this action
     disabled_message: str = ""  # Locale key spoken when activated while disabled
     show_disabled_label: bool = True  # Append "unavailable" suffix when disabled but visible
 

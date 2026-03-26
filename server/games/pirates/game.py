@@ -554,7 +554,7 @@ class PiratesGame(Game):
         # Play turn sound
         if not player.is_bot:
             user = self.get_user(player)
-            if user and user.preferences.play_turn_sound:
+            if user and user.preferences.get_effective("play_turn_sound", game_type=self.get_type()):
                 user.play_sound("game_pig/turn.ogg")
 
         self.broadcast_l(

@@ -68,6 +68,8 @@ class ThreesGame(ActionGuardMixin, RoundBasedGameMixin, Game, DiceGameMixin):
     Lowest score wins after all rounds.
     """
 
+    relevant_preferences = ["dice_keeping_style"]
+
     players: list[ThreesPlayer] = field(default_factory=list)
     options: ThreesOptions = field(default_factory=ThreesOptions)
 

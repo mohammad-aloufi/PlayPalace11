@@ -42,6 +42,7 @@ class GameResultMixin:
 
         # Build and persist the game result
         result = self.build_game_result()
+        self._last_game_result = result
         self._persist_result(result)
 
         # Show end screen

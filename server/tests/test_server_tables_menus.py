@@ -177,6 +177,8 @@ def test_handle_active_tables_selection_missing_table_speaks(server):
     asyncio.run(server._handle_active_tables_selection(user, "table_missing"))
 
     assert ("table-not-exists", {}) in user.spoken
+    # No active tables left, so it speaks "no-active-tables" and falls back to main menu
+    assert ("no-active-tables", {}) in user.spoken
     assert user.menu_shown[-1] == "main_menu"
 
 

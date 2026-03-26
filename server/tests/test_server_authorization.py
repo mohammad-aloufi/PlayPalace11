@@ -68,7 +68,7 @@ def server(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_authorize_registers_and_waits_for_approval(monkeypatch, server):
     server._db = SimpleNamespace(get_user_count=lambda: 5)
     record = SimpleNamespace(
@@ -80,6 +80,7 @@ async def test_authorize_registers_and_waits_for_approval(monkeypatch, server):
         preferences_json=json.dumps(
             {"play_turn_sound": False, "dice_keeping_style": "playpalace"}
         ),
+        fluent_languages=[],
     )
     auth = DummyAuth(authenticate_result=AuthResult.USER_NOT_FOUND, register_result=True, user_record=record)
     server._auth = auth
@@ -117,7 +118,7 @@ async def test_authorize_registers_and_waits_for_approval(monkeypatch, server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_authorize_existing_admin_announces(monkeypatch, server):
     server._db = SimpleNamespace(
         get_user_count=lambda: 0,
@@ -130,6 +131,7 @@ async def test_authorize_existing_admin_announces(monkeypatch, server):
         trust_level=TrustLevel.ADMIN,
         approved=True,
         preferences_json="{}",
+        fluent_languages=[],
     )
     auth = DummyAuth(authenticate_result=AuthResult.SUCCESS, user_record=record)
     server._auth = auth
@@ -164,7 +166,7 @@ async def test_authorize_existing_admin_announces(monkeypatch, server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_register_requires_username_and_password(server):
     client = DummyClient()
 
@@ -179,7 +181,7 @@ async def test_register_requires_username_and_password(server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_register_success_notifies_admins(server):
     server._db = SimpleNamespace(get_user_count=lambda: 3)
     auth = DummyAuth(register_result=True)
@@ -200,7 +202,7 @@ async def test_register_success_notifies_admins(server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_register_rejects_duplicate_username(server):
     server._db = SimpleNamespace(get_user_count=lambda: 0)
     auth = DummyAuth(register_result=False)
@@ -376,7 +378,7 @@ async def test_register_rejects_invalid_lengths(server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_login_rate_limit_by_ip(server):
     server._auth = DummyAuth(authenticate_result=AuthResult.USER_NOT_FOUND, register_result=False)
     server._login_ip_limit = 1
@@ -393,7 +395,7 @@ async def test_login_rate_limit_by_ip(server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_login_rate_limit_by_username(server):
     server._auth = DummyAuth(authenticate_result=AuthResult.WRONG_PASSWORD)
     server._login_user_limit = 1
@@ -409,7 +411,7 @@ async def test_login_rate_limit_by_username(server):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_registration_rate_limit_by_ip(server):
     server._db = SimpleNamespace(get_user_count=lambda: 0)
     server._auth = DummyAuth(register_result=True)

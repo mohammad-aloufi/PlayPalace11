@@ -57,7 +57,7 @@ def server(tmp_path):
 
 
 @pytest.mark.asyncio
-@pytest.mark.slow
+
 async def test_flush_user_messages_sends_only_to_connected_clients(server):
     alice = DummyNetworkUser()
     bob = DummyNetworkUser()
@@ -76,7 +76,7 @@ async def test_flush_user_messages_sends_only_to_connected_clients(server):
     assert bob.get_queued_messages() == []  # queue already drained
 
 
-@pytest.mark.slow
+
 def test_broadcast_helpers_respect_approval(server):
     approved = DummyNetworkUser(approved=True)
     unapproved = DummyNetworkUser(approved=False)
@@ -185,7 +185,7 @@ def test_on_client_disconnect_removes_last_member(server):
     assert members == []
 
 
-@pytest.mark.slow
+
 def test_send_game_list_includes_all_games(server):
     async def capture_send(payload):
         capture_send.sent.append(payload)

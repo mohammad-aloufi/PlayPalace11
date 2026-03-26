@@ -230,14 +230,19 @@ class NetworkUser(User):
         grid_width: int = 1,
         play_selection_sound: bool = False,
     ) -> None:
-        """Send a menu definition to the client."""
+        """Send a menu definition to the client.
+
+        Always sends full config so the client can correctly deduplicate
+        and preserve escape behavior across menu switches.
+        """
         converted_items = self._convert_items(items)
         previous_menu = self._current_menus.get(menu_id)
+        escape_str = escape_behavior.value
+
         if position is None and previous_menu:
             previous_position = previous_menu.get("position")
             if isinstance(previous_position, int) and previous_position > 0:
                 position = previous_position
-        escape_str = escape_behavior.value
 
         # Store for session resumption
         self._current_menus[menu_id] = {

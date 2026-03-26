@@ -83,13 +83,14 @@ def server(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_handle_options_selection_toggle_turn_sound(server, monkeypatch):
+async def test_handle_pref_category_toggle_turn_sound(server, monkeypatch):
     user = DummyUser("alice")
     user.preferences.play_turn_sound = True
     shown = {}
-    monkeypatch.setattr(server, "_show_options_menu", lambda u: shown.setdefault("called", True))
+    monkeypatch.setattr(server, "_show_pref_category_menu", lambda u, c, **kw: shown.setdefault("called", True))
+    server._user_states["alice"] = {"menu": "pref_category_menu", "pref_category": "sounds"}
 
-    await server._handle_options_selection(user, "turn_sound")
+    await server._handle_pref_category_selection(user, "pref_play_turn_sound")
 
     assert user.preferences.play_turn_sound is False
     assert user.sounds_played[-1] == "checkbox_list_off.wav"
@@ -114,16 +115,14 @@ async def test_handle_options_selection_language_opens_menu(server, monkeypatch)
 @pytest.mark.asyncio
 async def test_handle_options_selection_language_warmup_in_progress(server, monkeypatch):
     user = DummyUser("alice")
-    shown = {}
     Localization.set_warmup_active(True)
-    monkeypatch.setattr(server, "_show_options_menu", lambda u: shown.setdefault("options", True))
 
     try:
         await server._handle_options_selection(user, "language")
     finally:
         Localization.set_warmup_active(False)
 
-    assert shown.get("options")
+    # User stays on the options menu (no re-show), only hears the message
     assert user.spoken[-1][0] == "localization-in-progress-try-again"
 
 
@@ -175,8 +174,6 @@ def test_show_language_menu_warmup_in_progress(server, monkeypatch):
 @pytest.mark.asyncio
 async def test_fluent_languages_warmup_in_progress(server, monkeypatch):
     user = DummyUser("alice")
-    shown = {}
-    monkeypatch.setattr(server, "_show_options_menu", lambda u: shown.setdefault("options", True))
     Localization.set_warmup_active(True)
 
     try:
@@ -184,7 +181,7 @@ async def test_fluent_languages_warmup_in_progress(server, monkeypatch):
     finally:
         Localization.set_warmup_active(False)
 
-    assert shown.get("options")
+    # User stays on the options menu (no re-show), only hears the message
     assert user.spoken[-1][0] == "localization-in-progress-try-again"
 
 

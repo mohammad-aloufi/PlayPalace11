@@ -1201,7 +1201,7 @@ class VirtualBotManager:
         game = table.game
         if not game or game.status != "waiting":
             return False
-        if sum(1 for p in game.players if not p.is_spectator) >= game.get_max_players():
+        if sum(1 for p in game.players if not getattr(p, "is_spectator", False)) >= game.get_max_players():
             return False
 
         current = self._count_rule_bots(state, exclude=bot.name)
@@ -1249,7 +1249,7 @@ class VirtualBotManager:
         game = table.game
         if not game or game.status != "waiting":
             return False
-        if sum(1 for p in game.players if not p.is_spectator) >= game.get_max_players():
+        if sum(1 for p in game.players if not getattr(p, "is_spectator", False)) >= game.get_max_players():
             return False
 
         user = self._server._users.get(bot.name)
@@ -1371,7 +1371,7 @@ class VirtualBotManager:
             return False
 
         # Check if there's room
-        if sum(1 for p in game.players if not p.is_spectator) >= game.get_max_players():
+        if sum(1 for p in game.players if not getattr(p, "is_spectator", False)) >= game.get_max_players():
             return False
 
         # Join the table

@@ -209,6 +209,8 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
     Highest total score wins.
     """
 
+    relevant_preferences = ["clear_kept_on_roll", "dice_keeping_style"]
+
     players: list[YahtzeePlayer] = field(default_factory=list)
     options: YahtzeeOptions = field(default_factory=YahtzeeOptions)
 
@@ -412,7 +414,7 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
         # - lock_kept=False: kept dice don't become permanently locked
         # - clear_kept: controlled by user preference (default True)
         user = self.get_user(player)
-        clear_kept = user.preferences.clear_kept_on_roll if user else True
+        clear_kept = user.preferences.get_effective("clear_kept_on_roll", game_type=self.get_type()) if user else True
         ytz_player.dice.roll(lock_kept=False, clear_kept=clear_kept)
         self._apply_dice_values_defaults(ytz_player)
         ytz_player.rolls_left -= 1

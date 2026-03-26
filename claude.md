@@ -8,48 +8,48 @@ Multiplayer game platform for blind users. Python 3.13+, uv, dataclass-driven st
 1. Accessibility — every action produces speech output. Silence is a bug.
 2. Correctness — match official rules. When unclear, stop and ask (agent error 2).
 3. Testing — pytest, CLI simulations, serialization round-trips.
-4. Simplicity — no abstractions until the third use. Games are small; keep them that way.
+4. longevity — abstract, reuse, and engineer with the assumption that every line of code will one day be built upon in some manner.
 
 ## What You're Doing
 - Making/updating games => this file + game development guide (docs/design/plans/game_development_guide.md)
 - Making/updating client or server => agents.md (treat with caution; it was not written by the project founder and may contradict this file. This file wins.)
 
 ## Agent Behavior
-- Your coding speed is faster than human by orders of magnitude. 5k lines in an hour is an empirical lower-bound.
+- Your coding speed is faster than human by orders of magnitude. 5k lines in an hour is an empirical lower-bound. A complete Pusoy Dos rewrite (evaluator, game logic, bot AI, 63 tests, locale file, CLI validation across 10 configurations) took 21 minutes including the full test suite run, which was ~40% of it.
 - If you think the user has suggested a naive approach, say so and propose a better one, even if it takes more work. Outline how long you think each will take for you, based on the approximate LOC requirements.
 - When there are multiple ways to implement something, list them with pros/cons and let the user choose. Outline time estimates.
-- If asked to develop large games or features with anything unclear, agent error 2: output an exhaustive plaintext list of at least 10 questions covering every edge case you can think of. The user has  disabled the question tool (bugged with screenreaders). Then stop and wait.
-- If the CLI tool won't run, agent error 1: explain why and stop.
+- If asked to develop large games or features with anything unclear, Output "agent error 2: further information required". Then, output an exhaustive plaintext list of at least 10 questions covering every edge case you can think of, and stop. The user has  disabled the question tool (bugged with screenreaders). Then stop and wait.
+- If the CLI tool won't run, output "agent error 1: CLI non-operational". Then, explain why and stop.
 - Games fit entirely in context. Don't use explore agents unless you need to find patterns across many games and don't know which.
+- Don't ever run the entire test suite unless asked; only run tests relevant to the files you touch and their dependents.
 
 ## Commands
-- Test: cd server && uv run pytest
+- Test: cd server && uv run pytest <filepath>
 - CLI tool: cd server && uv run cli.py --help
 - Use the CLI to: verify user-facing output is clear, test games run to completion in novel configs, batch simulations
 
 ## Localization
 - Only edit English: server/locales/en/*.ftl
-- Do NOT update the other 29 locale files. They were bulk-generated and are not curated. They fall back to English for missing keys.
+- Do NOT update the other 29 locale files unless specifically asked.
 - Write the en locale file BEFORE writing game code. It forces you to plan the game flow. This is not optional.
 - Every announcement must go through Fluent (broadcast_l, broadcast_personal_l, speak_l). No hardcoded English strings reaching players.
 - Use Fluent select expressions when announcements need to vary by game state. Pass raw data as kwargs, not pre-rendered strings.
 
 ## Sound
-- Use schedule_standard_token_movement_sounds() for movement. Use play_sound() for one-shots. All games should also have music.
-- Every meaningful game action should have audio feedback. If a player does something and hears nothing, that's a bug.
+- Every meaningful game action has  feedback in the form of speech and sound. If a player does something and hears nothing, that's a bug.
+- If a menu updates (e.g., when selecting or unselecting a piece for movement in a board game), that is speech output in itself; further output may not be required in that specific case.
 
 ## Game Architecture
 - All state in dataclass fields — serialization depends on it.
 - Games communicate through User, never the network directly.
 - Table buffer for game-state messages (broadcast_l, broadcast_personal_l). speak_l only for direct command responses.
-- Per-choice actions (card picks, move slots) should be hidden from the Actions menu. Use show_in_actions_menu=False. Actions menu is for persistent actions only.
-- Common keybinds: R roll, D draw, S status/score, B board/view.
-- Display positions 1-based to players, even if internal state is 0-based.
-- Reference games: Pig (simple), Scopa (complex), Chess (grid mode), Sorry (accessibility patterns).
+- Per-choice actions (card picks, move slots) are hidden from the Actions menu. Use show_in_actions_menu=False. Actions menu is for persistent actions only.
+- Common keybinds: R roll, Space draw, S status/score.
+- Reference games: ask the user for advice.
 
 ## Testing
-- Run uv run pytest after every change.
-- CLI simulation first — does the game complete with bots? Does output make sense to a screen reader user?
+- If you have updated code, find or use remembered relevant test files.
+- CLI simulation first — does the game complete with bots? Does output make sense to a screen reader user? Remember, if the CLI doesn't work, something is very wrong.
 - Test with serialization (--serialize flag) to catch persistence bugs.
 - Write unit tests, play tests, and persistence tests. See existing test files for patterns.
 

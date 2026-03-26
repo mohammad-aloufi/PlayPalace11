@@ -32,9 +32,6 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = [".."]
-markers = [
-    "slow: marks tests that require --runslow to execute",
-]
 
 filterwarnings = [
     "ignore:.*arguments.__init__ got an unexpected keyword argument 'lineno'.*:DeprecationWarning:fluent_compiler",

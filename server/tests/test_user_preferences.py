@@ -18,11 +18,9 @@ def test_user_preferences_to_dict_and_from_dict_round_trip():
         dice_keeping_style=DiceKeepingStyle.QUENTIN_C,
     )
     data = prefs.to_dict()
-    assert data == {
-        "play_turn_sound": False,
-        "clear_kept_on_roll": True,
-        "dice_keeping_style": "quentin_c",
-    }
+    assert data["play_turn_sound"] is False
+    assert data["clear_kept_on_roll"] is True
+    assert data["dice_keeping_style"] == "quentin_c"
 
     rebuilt = UserPreferences.from_dict(
         {"clear_kept_on_roll": True, "dice_keeping_style": "unknown"}

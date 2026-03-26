@@ -102,6 +102,9 @@ class IntOption(OptionMeta):
         "score"  # Key used in localization (e.g., "score", "points", "sides")
     )
 
+    def get_label(self, locale: str, value: Any) -> str:
+        return Localization.get(locale, self.label, **self.get_label_kwargs(value))
+
     def get_label_kwargs(self, value: Any) -> dict[str, Any]:
         """Return label formatting kwargs for the current value."""
         return {self.value_key: value}
@@ -225,6 +228,11 @@ class MenuOption(OptionMeta):
     # If not provided, raw choice values are displayed
     choice_labels: dict[str, str] | None = None
 
+    def get_label(self, locale: str, value: Any) -> str:
+        return Localization.get(
+            locale, self.label, **self.get_label_kwargs_localized(value, locale)
+        )
+
     def get_localized_choice(self, value: str, locale: str) -> str:
         """Get the localized display text for a choice value."""
         if self.choice_labels and value in self.choice_labels:
@@ -312,6 +320,11 @@ class BoolOption(OptionMeta):
     """
 
     value_key: str = "enabled"  # Key used in localization
+
+    def get_label(self, locale: str, value: Any) -> str:
+        on_off_key = "option-on" if value else "option-off"
+        on_off = Localization.get(locale, on_off_key)
+        return Localization.get(locale, self.label, **{self.value_key: on_off})
 
     def __post_init__(self):
         """Disable prompts for boolean toggles."""
@@ -603,6 +616,14 @@ class GameOptions(DataClassJSONMixin):
     def get_option_metas(self) -> dict[str, OptionMeta]:
         """Get all option metadata for this options instance."""
         return get_all_option_metas(type(self))
+
+    def format_options_summary(self, locale: str) -> list[str]:
+        """Return a list of localized label strings for all current option values."""
+        lines = []
+        for name, meta in self.get_option_metas().items():
+            current_value = getattr(self, name)
+            lines.append(meta.get_label(locale, current_value))
+        return lines
 
     def get_option_group_metas(self) -> dict[str, OptionGroupMeta]:
         """Get all option group metadata for this options instance."""

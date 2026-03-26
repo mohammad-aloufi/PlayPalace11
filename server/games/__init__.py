@@ -35,6 +35,13 @@ from .twentyone import TwentyOneGame
 from .chess.game import ChessGame
 from .backgammon.game import BackgammonGame
 
+# PlayAural games
+from .battleship.game import BattleshipGame
+from .coup.game import CoupGame
+from .dominos.game import DominosGame
+from .lastcard.game import LastCardGame
+from .pusoydos.game import PusoyDosGame
+
 __all__ = [
     "Game",
     "GameRegistry",
@@ -70,4 +77,10 @@ __all__ = [
     "TwentyOneGame",
     "ChessGame",
     "BackgammonGame",
+
+    "BattleshipGame",
+    "CoupGame",
+    "DominosGame",
+    "LastCardGame",
+    "PusoyDosGame",
 ]

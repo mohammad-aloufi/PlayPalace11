@@ -33,6 +33,9 @@ tick_interval_ms = 50
 [localization]
 # Default locale for new users (and for auth flows without a client locale)
 default_locale = "en"
+# Only load these locales at startup (English is always included).
+# Omit or leave empty to load all locales.
+# enabled_locales = ["en"]
 
 [virtual_bots]
 # Bot names - these will be used for virtual bot usernames

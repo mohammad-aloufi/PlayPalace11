@@ -103,14 +103,6 @@ class BackgammonOptions(GameOptions):
             change_msg="backgammon-option-changed-bot-difficulty",
         )
     )
-    verbose_commentary: bool = option_field(
-        BoolOption(
-            default=False,
-            value_key="verbose_commentary",
-            label="backgammon-option-verbose-commentary",
-            change_msg="backgammon-option-changed-verbose-commentary",
-        )
-    )
     hints_enabled: bool = option_field(
         BoolOption(
             default=False,
@@ -140,6 +132,8 @@ class BackgammonPlayer(Player):
 @dataclass
 class BackgammonGame(Game):
     """Backgammon with accessibility-first design."""
+
+    relevant_preferences = ["brief_announcements"]
 
     players: list[BackgammonPlayer] = field(default_factory=list)
     options: BackgammonOptions = field(default_factory=BackgammonOptions)
@@ -1558,7 +1552,8 @@ class BackgammonGame(Game):
         self, user: User, move: BackgammonMove, mover_color: str, viewer_color: str
     ) -> None:
         """Speak a single sub-move to a user with point numbers in their perspective."""
-        if self.options.verbose_commentary:
+        brief = user.preferences.get_effective("brief_announcements", game_type=self.get_type())
+        if not brief:
             self._speak_move_verbose(user, move, mover_color, viewer_color)
             return
         gs = self.game_state
