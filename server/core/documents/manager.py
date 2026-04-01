@@ -856,6 +856,140 @@ class DocumentManager:
         """Return the number of pending changes or commits ahead."""
         return len(self.get_pending_changes())
 
+    def get_uncommitted_shared_documents(self) -> list[dict]:
+        """Return shared documents with uncommitted changes and descriptions.
+
+        Each entry is a dict with ``folder_name`` and ``change_tag`` keys.
+        ``change_tag`` is one of: ``"absent"``, ``"present"``, ``"content"``,
+        ``"metadata"``, or ``"content_and_metadata"``.
+        """
+        repo_root = self._find_git_root()
+        if repo_root is None:
+            return []
+
+        try:
+            rel_shared = str(
+                self._shared_dir.resolve().relative_to(repo_root.resolve())
+            ).replace("\\", "/")
+        except ValueError:
+            return []
+
+        # Collect tracked modifications/deletions
+        modified_paths: list[str] = []
+        try:
+            result = subprocess.run(
+                ["git", "diff", "--name-only", "HEAD", "--", rel_shared],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                modified_paths = [
+                    l for l in result.stdout.strip().splitlines() if l
+                ]
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return []
+
+        # Collect untracked (new) files
+        untracked_paths: list[str] = []
+        try:
+            result = subprocess.run(
+                [
+                    "git", "ls-files",
+                    "--others", "--exclude-standard",
+                    "--", rel_shared,
+                ],
+                cwd=str(repo_root),
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                untracked_paths = [
+                    l for l in result.stdout.strip().splitlines() if l
+                ]
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+
+        untracked_set = {p.replace("\\", "/") for p in untracked_paths}
+
+        # Group file paths by document folder and classify changes
+        # folder -> {"content": bool, "metadata": bool, "new": bool}
+        folder_info: dict[str, dict[str, bool]] = {}
+        for path in modified_paths + untracked_paths:
+            normalized = path.replace("\\", "/")
+            if not normalized.startswith(rel_shared + "/"):
+                continue
+            rest = normalized[len(rel_shared) + 1:]
+            parts = rest.split("/")
+            if not parts:
+                continue
+            folder_name = parts[0]
+            filename = parts[1] if len(parts) > 1 else ""
+
+            info = folder_info.setdefault(
+                folder_name, {"content": False, "metadata": False, "new": False},
+            )
+            if normalized in untracked_set:
+                info["new"] = True
+            if filename.endswith(".md"):
+                info["content"] = True
+            elif filename == "_metadata.json":
+                info["metadata"] = True
+
+        results: list[dict] = []
+        for folder_name, info in folder_info.items():
+            doc_dir = self._shared_dir / folder_name
+            if not doc_dir.exists():
+                tag = "absent"
+            elif info["new"] and not info["content"] and not info["metadata"]:
+                tag = "present"
+            elif info["content"] and info["metadata"]:
+                tag = "content_and_metadata"
+            elif info["metadata"]:
+                tag = "metadata"
+            else:
+                tag = "content"
+            results.append({"folder_name": folder_name, "change_tag": tag})
+
+        return results
+
+    def discard_document_changes(self, folder_name: str) -> bool:
+        """Discard uncommitted changes for a specific shared document.
+
+        Restores the document's directory to match HEAD.
+        Returns ``True`` on success.
+        """
+        repo_root = self._find_git_root()
+        if repo_root is None:
+            return False
+
+        doc_dir = self._shared_dir / folder_name
+        if not doc_dir.exists():
+            # Document was deleted locally — restore from HEAD
+            pass
+
+        try:
+            rel_path = str(
+                doc_dir.resolve().relative_to(repo_root.resolve())
+            )
+        except ValueError:
+            return False
+
+        result = subprocess.run(
+            ["git", "checkout", "HEAD", "--", rel_path],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            LOG.error("Failed to discard changes for %s: %s",
+                      folder_name, result.stderr.strip())
+            return False
+        return True
+
     # ------------------------------------------------------------------
     # Export
     # ------------------------------------------------------------------

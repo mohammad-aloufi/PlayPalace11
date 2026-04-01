@@ -89,6 +89,10 @@ class DocumentBrowsingMixin:
                 self._handle_delete_document_confirm,
                 (user, selection_id, state),
             ),
+            "promote_to_shared_confirm": (
+                self._handle_promote_confirm,
+                (user, selection_id, state),
+            ),
             "document_edit_lang_menu": (
                 self._handle_edit_lang_selection,
                 (user, selection_id, state),
@@ -115,6 +119,10 @@ class DocumentBrowsingMixin:
             ),
             "delete_category_confirm": (
                 self._handle_delete_category_confirm,
+                (user, selection_id, state),
+            ),
+            "sync_discard_menu": (
+                self._handle_sync_discard_selection,
                 (user, selection_id, state),
             ),
         }
@@ -336,11 +344,145 @@ class DocumentBrowsingMixin:
     # Sync and export
     # ------------------------------------------------------------------
 
+    _CHANGE_TAG_KEYS = {
+        "absent": "documents-sync-tag-absent",
+        "present": "documents-sync-tag-present",
+        "content": "documents-sync-tag-content",
+        "metadata": "documents-sync-tag-metadata",
+        "content_and_metadata": "documents-sync-tag-content-and-metadata",
+    }
+
     async def _handle_sync_documents(self, user: NetworkUser) -> None:
-        """Sync shared documents from the git repository."""
-        pending = self._documents.get_pending_change_count()
-        if pending > 0:
-            user.speak_l("documents-sync-pending-warning", count=str(pending))
+        """Sync shared documents from the git repository.
+
+        If there are uncommitted local changes to shared documents, the
+        admin is shown a per-document toggle list to choose which to
+        discard before syncing.
+        """
+        changed_docs = self._documents.get_uncommitted_shared_documents()
+        if changed_docs:
+            self._show_sync_discard_menu(user, changed_docs)
+        else:
+            self._do_sync(user)
+
+    def _show_sync_discard_menu(
+        self,
+        user: NetworkUser,
+        changed_docs: list[dict],
+        focus_id: str | None = None,
+    ) -> None:
+        """Show per-document discard/keep toggles before syncing."""
+        state = self._user_states.get(user.username, {})
+        discard_set = set(state.get("sync_discard", []))
+
+        user.speak_l(
+            "documents-sync-local-changes",
+            count=str(len(changed_docs)),
+        )
+
+        items: list[MenuItem] = []
+        focus_position = 1
+        for entry in changed_docs:
+            folder = entry["folder_name"]
+            tag = entry["change_tag"]
+            title = self._get_document_title(folder, user.locale)
+            description = Localization.get(
+                user.locale,
+                self._CHANGE_TAG_KEYS.get(tag, "documents-sync-tag-content"),
+            )
+            if folder in discard_set:
+                label = Localization.get(
+                    user.locale, "documents-sync-discard-label",
+                    title=title, description=description,
+                )
+            else:
+                label = Localization.get(
+                    user.locale, "documents-sync-keep-label",
+                    title=title, description=description,
+                )
+            item_id = f"toggle_{folder}"
+            items.append(MenuItem(text=label, id=item_id))
+            if item_id == focus_id:
+                focus_position = len(items)
+
+        items.append(MenuItem(
+            text=Localization.get(user.locale, "documents-sync-discard-all"),
+            id="discard_all",
+        ))
+        items.append(MenuItem(
+            text=Localization.get(user.locale, "documents-sync-keep-all"),
+            id="keep_all",
+        ))
+        items.append(MenuItem(
+            text=Localization.get(user.locale, "documents-sync-confirm"),
+            id="sync_confirm",
+        ))
+        items.append(MenuItem(
+            text=Localization.get(user.locale, "back"),
+            id="back",
+        ))
+        user.show_menu(
+            "sync_discard_menu",
+            items,
+            multiletter=True,
+            escape_behavior=EscapeBehavior.SELECT_LAST,
+            position=focus_position,
+        )
+        self._user_states[user.username] = {
+            "menu": "sync_discard_menu",
+            "sync_changed_docs": changed_docs,
+            "sync_discard": list(discard_set),
+        }
+
+    async def _handle_sync_discard_selection(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle discard/keep toggle and sync confirmation."""
+        changed_docs: list[dict] = state.get("sync_changed_docs", [])
+        all_folders = [d["folder_name"] for d in changed_docs]
+        discard_set = set(state.get("sync_discard", []))
+
+        if selection_id == "back":
+            self._show_documents_menu(user)
+            return
+
+        if selection_id == "discard_all":
+            discard_set = set(all_folders)
+            state["sync_discard"] = list(discard_set)
+            self._user_states[user.username] = state
+            self._show_sync_discard_menu(user, changed_docs)
+            return
+
+        if selection_id == "keep_all":
+            discard_set = set()
+            state["sync_discard"] = []
+            self._user_states[user.username] = state
+            self._show_sync_discard_menu(user, changed_docs)
+            return
+
+        if selection_id == "sync_confirm":
+            # Discard selected documents, then sync
+            for folder in discard_set:
+                self._documents.discard_document_changes(folder)
+            self._do_sync(user)
+            return
+
+        if selection_id.startswith("toggle_"):
+            folder = selection_id[7:]
+            if folder in discard_set:
+                discard_set.remove(folder)
+                user.play_sound("checkbox_list_off.wav")
+            else:
+                discard_set.add(folder)
+                user.play_sound("checkbox_list_on.wav")
+            state["sync_discard"] = list(discard_set)
+            self._user_states[user.username] = state
+            self._show_sync_discard_menu(
+                user, changed_docs, focus_id=selection_id,
+            )
+
+    def _do_sync(self, user: NetworkUser) -> None:
+        """Run the actual sync and report the result."""
         success, message = self._documents.sync_shared_documents()
         if success:
             user.speak_l("documents-sync-success")
@@ -660,20 +802,47 @@ class DocumentBrowsingMixin:
         elif selection_id == "delete_document":
             self._show_delete_document_confirm(user, folder_name, state)
         elif selection_id == "promote_to_shared":
-            await self._handle_promote_to_shared(user, folder_name, state)
+            self._show_promote_confirm(user, folder_name, state)
         elif selection_id == "based_on_stale_notice":
             # Informational item — just refresh the settings menu
             self._show_document_settings(user, folder_name, state)
 
-    async def _handle_promote_to_shared(
+    def _show_promote_confirm(
         self, user: NetworkUser, folder_name: str, state: dict
     ) -> None:
-        """Promote an independent document to shared scope."""
-        result = self._documents.promote_to_shared(folder_name)
-        if result:
-            user.speak_l("documents-promoted-to-shared")
-        else:
-            user.speak_l("documents-promote-failed")
+        """Show yes/no confirmation for promoting a document to shared."""
+        question = Localization.get(user.locale, "documents-promote-confirm")
+        show_yes_no_menu(user, "promote_to_shared_confirm", question)
+        self._user_states[user.username] = {
+            "menu": "promote_to_shared_confirm",
+            "folder_name": folder_name,
+            "category_slug": state.get("category_slug"),
+        }
+
+    async def _handle_promote_confirm(
+        self, user: NetworkUser, selection_id: str, state: dict
+    ) -> None:
+        """Handle promote-to-shared confirmation."""
+        folder_name = state.get("folder_name", "")
+        if selection_id == "yes":
+            result = self._documents.promote_to_shared(folder_name)
+            if result:
+                user.speak_l("documents-promoted-to-shared")
+                meta = self._documents.get_document_metadata(folder_name)
+                locale_code = meta.get("source_locale", "en") if meta else "en"
+                mode = self._documents.contribution_mode
+                if mode == MODE_MANUAL:
+                    self._documents._log_attribution(
+                        folder_name, locale_code, user.username,
+                        "promote", "",
+                    )
+                else:
+                    self._documents.commit_changes(
+                        folder_name, locale_code, user.username,
+                        f"Add {folder_name} (promoted from independent)",
+                    )
+            else:
+                user.speak_l("documents-promote-failed")
         self._show_document_settings(user, folder_name, state)
 
     # ------------------------------------------------------------------

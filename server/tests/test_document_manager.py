@@ -1218,6 +1218,132 @@ class TestPendingDetectionAutoMode:
 
 
 # ------------------------------------------------------------------
+# Uncommitted shared documents and discard
+# ------------------------------------------------------------------
+
+
+class TestUncommittedSharedDocuments:
+    def _folder_names(self, results):
+        return [r["folder_name"] for r in results]
+
+    def _find_entry(self, results, folder_name):
+        for r in results:
+            if r["folder_name"] == folder_name:
+                return r
+        return None
+
+    def test_no_uncommitted_changes(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "clean", scope="shared")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        assert git_manager.get_uncommitted_shared_documents() == []
+
+    def test_detects_modified_content(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "edited_doc", scope="shared")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        git_manager.save_document_content("edited_doc", "en", "changed", "alice")
+        results = git_manager.get_uncommitted_shared_documents()
+        assert len(results) == 1
+        assert results[0]["folder_name"] == "edited_doc"
+        # Content change includes both .md and _metadata.json (timestamp update)
+        assert results[0]["change_tag"] in ("content", "content_and_metadata")
+
+    def test_detects_metadata_only_change(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "meta_only", scope="shared")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        git_manager.set_document_title("meta_only", "en", "New Title")
+        results = git_manager.get_uncommitted_shared_documents()
+        assert len(results) == 1
+        assert results[0]["change_tag"] == "metadata"
+
+    def test_detects_deleted_document(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "doomed", scope="shared")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        import shutil
+        shutil.rmtree(git_docs_dir / "shared" / "doomed")
+
+        results = git_manager.get_uncommitted_shared_documents()
+        entry = self._find_entry(results, "doomed")
+        assert entry is not None
+        assert entry["change_tag"] == "absent"
+
+    def test_deduplicates_content_and_metadata(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "multi_file", scope="shared")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        git_manager.save_document_content("multi_file", "en", "new", "alice")
+        git_manager.set_document_title("multi_file", "en", "New Title")
+
+        results = git_manager.get_uncommitted_shared_documents()
+        assert len(results) == 1
+        assert results[0]["change_tag"] == "content_and_metadata"
+
+    def test_no_git_repo_returns_empty(self, manager):
+        manager.load()
+        assert manager.get_uncommitted_shared_documents() == []
+
+
+class TestDiscardDocumentChanges:
+    def test_discard_restores_content(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "restorable", scope="shared", content="original")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        git_manager.save_document_content("restorable", "en", "modified", "alice")
+        assert git_manager.discard_document_changes("restorable") is True
+
+        restored = (git_docs_dir / "shared" / "restorable" / "en.md").read_text(
+            encoding="utf-8"
+        )
+        assert restored == "original"
+
+    def test_discard_restores_deleted_document(self, git_manager, git_docs_dir):
+        _create_doc_on_disk(git_docs_dir, "deleted_doc", scope="shared", content="alive")
+        git_manager.load()
+
+        repo = git_docs_dir.parent
+        _git_run(repo, "add", "-A")
+        _git_run(repo, "commit", "-m", "initial")
+
+        import shutil
+        shutil.rmtree(git_docs_dir / "shared" / "deleted_doc")
+        assert not (git_docs_dir / "shared" / "deleted_doc").exists()
+
+        assert git_manager.discard_document_changes("deleted_doc") is True
+        assert (git_docs_dir / "shared" / "deleted_doc" / "en.md").exists()
+
+    def test_no_git_repo_returns_false(self, manager):
+        manager.load()
+        assert manager.discard_document_changes("anything") is False
+
+
+# ------------------------------------------------------------------
 # Contribution mode property
 # ------------------------------------------------------------------
 
