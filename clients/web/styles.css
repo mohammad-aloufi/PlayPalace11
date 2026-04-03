@@ -347,16 +347,42 @@ dialog::backdrop {
     grid-template-columns: 1fr;
   }
 
+  /* Show History above Game on narrow viewports without changing DOM
+     order (keeps Tab/screen-reader sequence desktop-correct: Game → History). */
+  #game-shell > .panel:nth-child(1) {
+    order: 2;
+  }
+  #game-shell > .panel:nth-child(2) {
+    order: 1;
+  }
+
   main {
-    gap: 14px;
+    gap: 10px;
+    padding: 10px;
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+
+  h1 {
+    font-size: 1.4rem;
   }
 
   .panel {
-    padding: 14px;
+    padding: 10px;
   }
 
   .row {
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .volume-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .volume-controls input[type="range"] {
+    width: 120px;
   }
 
   .history {
@@ -365,12 +391,24 @@ dialog::backdrop {
 
   .history-log {
     display: block;
-    min-height: 300px;
-    height: 42vh;
+    min-height: 150px;
+    height: 30vh;
+    font-size: 1rem;
+    line-height: 1.5;
+    padding: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu-list {
+    max-height: 35vh;
   }
 
   .history-toggle-title {
     cursor: pointer;
     text-decoration: underline;
+  }
+
+  dialog {
+    width: min(420px, 95vw);
   }
 }
