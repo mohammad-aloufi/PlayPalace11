@@ -88,12 +88,12 @@ milebymile-from-trip = { $points } from completing the trip
 milebymile-from-perfect = { $points } from a perfect crossing
 milebymile-from-safe = { $points } from a safe trip
 milebymile-from-shutout = { $points } from a shut out
-milebymile-from-safeties = { $points } from { $count } { $safeties ->
+milebymile-from-safeties = { $points } from { $count } { $count ->
     [one] safety
     *[other] safeties
 }
 milebymile-from-all-safeties = { $points } from all 4 safeties
-milebymile-from-dirty-tricks = { $points } from { $count } { $tricks ->
+milebymile-from-dirty-tricks = { $points } from { $count } { $count ->
     [one] dirty trick
     *[other] dirty tricks
 }
