@@ -167,6 +167,10 @@ class ActionVisibilityMixin:
             return Visibility.VISIBLE
         return Visibility.HIDDEN
 
+    def _is_always_enabled(self, player: "Player") -> str | None:
+        """Always enable an action."""
+        return None
+
     def _is_always_hidden(self, player: "Player") -> Visibility:
         """Always hide an action from menus (keybind only)."""
         return Visibility.HIDDEN

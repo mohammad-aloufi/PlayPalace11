@@ -109,6 +109,16 @@ class ActionSetCreationMixin:
         )
         action_set.add(
             Action(
+                id="show_rules",
+                label=Localization.get(locale, "show-rules"),
+                handler="_action_show_rules",
+                is_enabled="_is_always_enabled",
+                is_hidden="_is_always_hidden",
+                show_in_actions_menu=True,
+            )
+        )
+        action_set.add(
+            Action(
                 id="save_table",
                 label=Localization.get(locale, "save-table"),
                 handler="_action_save_table",
@@ -223,6 +233,13 @@ class ActionSetCreationMixin:
             include_spectators=True,
         )
         # Standard keybinds
+        self.define_keybind(
+            "f1",
+            "Show rules",
+            ["show_rules"],
+            state=KeybindState.ALWAYS,
+            include_spectators=True,
+        )
         self.define_keybind(
             "escape",
             "Actions menu",

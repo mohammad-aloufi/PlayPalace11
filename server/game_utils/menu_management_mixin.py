@@ -230,3 +230,61 @@ class MenuManagementMixin:
             items=items,
             multiletter=False,
         )
+
+    def _action_show_rules(self, player: "Player", action_id: str) -> None:
+        """Show the rules document for the game."""
+        user = self.get_user(player)
+        if not user:
+            return
+            
+        doc_manager = None
+        if hasattr(self, "_table") and self._table and hasattr(self._table, "_server") and self._table._server:
+            if hasattr(self._table._server, "_documents"):
+                doc_manager = self._table._server._documents
+        
+        if not doc_manager:
+            user.speak_l("action-not-available")
+            return
+            
+        folder_name = f"{self.get_type()}_rules"
+        meta = doc_manager.get_document_metadata(folder_name)
+        if not meta:
+            user.speak_l("documents-no-content")
+            return
+            
+        visible_locales = doc_manager._get_visible_locale_codes(meta, include_private=False)
+        allowed_private = set()
+        
+        source_locale = meta.get("source_locale", "en")
+        title_locale = None
+        content = None
+        
+        for locale_code in [user.locale, "en", source_locale, *visible_locales]:
+            if locale_code not in visible_locales or locale_code == title_locale:
+                continue
+            candidate_content = doc_manager.get_document_content_for_access(
+                folder_name,
+                locale_code,
+                include_private=False,
+                allowed_private_locales=allowed_private,
+            )
+            if candidate_content is None:
+                continue
+            content = candidate_content
+            title_locale = locale_code
+            break
+            
+        if content is None:
+            user.speak_l("documents-no-content")
+            return
+            
+        title = meta.get("titles", {}).get(title_locale or user.locale) or folder_name
+        
+        user.show_editbox(
+            "game_rules",
+            title,
+            default_value=content,
+            multiline=True,
+            read_only=True,
+            content_format="markdown",
+        )
