@@ -322,10 +322,10 @@ class LoginDialog(wx.Dialog):
         from .server_manager import ServerEditorDialog
 
         dlg = ServerEditorDialog(self, self.config_manager)
-        dlg.ShowModal()
-        new_server_id = dlg.get_server_id()
+        if dlg.ShowModal() == wx.ID_OK:
+            new_server_id = dlg.get_server_id()
+            self._populate_tree(select_server_id=new_server_id)
         dlg.Destroy()
-        self._populate_tree(select_server_id=new_server_id)
         self.tree.SetFocus()
 
     def on_add_account(self, event):
@@ -343,10 +343,10 @@ class LoginDialog(wx.Dialog):
         dlg = AccountEditorDialog(
             self, self.config_manager, server_id, account_id=None, server_name=server_name
         )
-        dlg.ShowModal()
-        new_account_id = dlg.get_account_id()
+        if dlg.ShowModal() == wx.ID_OK:
+            new_account_id = dlg.get_account_id()
+            self._populate_tree(select_server_id=server_id, select_account_id=new_account_id)
         dlg.Destroy()
-        self._populate_tree(select_server_id=server_id, select_account_id=new_account_id)
         self.tree.SetFocus()
 
     def on_register(self, event):
@@ -382,9 +382,9 @@ class LoginDialog(wx.Dialog):
             from .server_manager import ServerEditorDialog
 
             dlg = ServerEditorDialog(self, self.config_manager, server_id)
-            dlg.ShowModal()
+            if dlg.ShowModal() == wx.ID_OK:
+                self._populate_tree(select_server_id=server_id)
             dlg.Destroy()
-            self._populate_tree(select_server_id=server_id)
         elif item_type == "account":
             from .server_manager import AccountEditorDialog
 
@@ -392,9 +392,9 @@ class LoginDialog(wx.Dialog):
             dlg = AccountEditorDialog(
                 self, self.config_manager, server_id, account_id, server_name=server_name
             )
-            dlg.ShowModal()
+            if dlg.ShowModal() == wx.ID_OK:
+                self._populate_tree(select_server_id=server_id, select_account_id=account_id)
             dlg.Destroy()
-            self._populate_tree(select_server_id=server_id, select_account_id=account_id)
 
         self.tree.SetFocus()
 
