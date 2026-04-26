@@ -302,7 +302,7 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
         action_set.add(
             Action(
                 id="view_all_scoresheets",
-                label=Localization.get(locale, "yahtzee-check-scoresheet"),
+                label=Localization.get(locale, "yahtzee-check-all-scoresheets"),
                 handler="_action_view_all_scoresheets",
                 is_enabled="_is_view_scoresheet_enabled",
                 is_hidden="_is_view_scoresheet_hidden",

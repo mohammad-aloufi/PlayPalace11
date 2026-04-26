@@ -48,6 +48,7 @@ yahtzee-continuing = Continuing turn.
 
 # Status checks
 yahtzee-check-scoresheet = Check scorecard
+yahtzee-check-all-scoresheets = Check all scorecards
 yahtzee-view-dice = Check your dice
 yahtzee-your-dice = Your dice: { $dice }.
 yahtzee-your-dice-kept = Your dice: { $dice }. Keeping: { $kept }
