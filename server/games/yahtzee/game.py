@@ -642,17 +642,15 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
 
     def _handle_transient_display_selection(self, player: Player, selection_id: str) -> None:
         """Handle a selection from the shared transient display menu."""
-        super()._handle_transient_display_selection(player, selection_id)
-        
         state = self._get_transient_display_state(player)
-        if not state:
-            return
-
-        if state.kind == "scoresheet_player_select":
+        if state and state.kind == "scoresheet_player_select":
             self._close_transient_display(player)
             target = self.get_player_by_id(selection_id)
             if target:
                 self._show_player_scoresheet(player, target)
+            return
+
+        super()._handle_transient_display_selection(player, selection_id)
 
     def on_start(self) -> None:
         """Called when the game starts."""
