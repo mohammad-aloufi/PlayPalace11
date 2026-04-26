@@ -246,32 +246,34 @@ class MenuManagementMixin:
             return
             
         visible_locales = doc_manager._get_visible_locale_codes(meta, include_private=False)
-        allowed_private = set()
-        
-        source_locale = meta.get("source_locale", "en")
-        title_locale = None
-        content = None
-        
-        for locale_code in [user.locale, "en", source_locale, *visible_locales]:
-            if locale_code not in visible_locales or locale_code == title_locale:
-                continue
-            candidate_content = doc_manager.get_document_content_for_access(
-                folder_name,
-                locale_code,
-                include_private=False,
-                allowed_private_locales=allowed_private,
-            )
-            if candidate_content is None:
-                continue
-            content = candidate_content
-            title_locale = locale_code
-            break
+        if not visible_locales:
+            user.speak_l("documents-no-content")
+            return
             
+        source_locale = meta.get("source_locale", "en")
+        title_locale = doc_manager._select_display_title_locale(visible_locales, user.locale, source_locale)
+        
+        if not title_locale:
+            user.speak_l("documents-no-content")
+            return
+            
+        content = doc_manager.get_document_content_for_access(
+            folder_name,
+            title_locale,
+            include_private=False,
+        )
         if content is None:
             user.speak_l("documents-no-content")
             return
             
-        title = meta.get("titles", {}).get(title_locale or user.locale) or folder_name
+        titles = meta.get("titles", {})
+        title = doc_manager._select_visible_title(
+            titles,
+            visible_locales,
+            title_locale,
+            source_locale,
+            folder_name,
+        )
         
         user.show_editbox(
             "game_rules",
