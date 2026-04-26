@@ -569,6 +569,8 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
             return
 
         items = [MenuItem(text=p.name, id=p.id) for p in active_players]
+        back_label = Localization.get(user.locale, "back")
+        items.append(MenuItem(text=back_label, id="transient_display_back"))
         self._show_transient_display(
             player,
             kind="scoresheet_player_select",
@@ -646,6 +648,9 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
         """Handle a selection from the shared transient display menu."""
         state = self._get_transient_display_state(player)
         if state and state.kind == "scoresheet_player_select":
+            if selection_id == "transient_display_back":
+                self._close_transient_display(player)
+                return
             self._close_transient_display(player)
             target = self.get_player_by_id(selection_id)
             if target:
