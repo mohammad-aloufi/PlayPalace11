@@ -102,7 +102,7 @@ class ActionSetCreationMixin:
                 id="show_actions",
                 label=Localization.get(locale, "actions-menu"),
                 handler="_action_show_actions_menu",
-                is_enabled="_is_show_actions_enabled",
+                is_enabled="_is_always_enabled",
                 is_hidden="_is_always_hidden",
                 show_in_actions_menu=False,
             )
@@ -187,7 +187,7 @@ class ActionSetCreationMixin:
                 id="leave_game",
                 label=Localization.get(locale, "leave-table"),
                 handler="_action_leave_game",
-                is_enabled="_is_leave_game_enabled",
+                is_enabled="_is_always_enabled",
                 is_hidden="_is_leave_game_hidden",
             )
         )
