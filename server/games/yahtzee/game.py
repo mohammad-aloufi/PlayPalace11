@@ -323,7 +323,7 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
 
         self.define_keybind("d", "View dice", ["view_dice"], state=KeybindState.ACTIVE, include_spectators=True)
         self.define_keybind("c", "View scoresheet", ["view_scoresheet"], state=KeybindState.ACTIVE, include_spectators=True)
-        self.define_keybind("C", "View all scoresheets", ["view_all_scoresheets"], state=KeybindState.ACTIVE, include_spectators=True)
+        self.define_keybind("shift+c", "View all scoresheets", ["view_all_scoresheets"], state=KeybindState.ACTIVE, include_spectators=True)
 
     # ==========================================================================
     # Declarative Action Callbacks
