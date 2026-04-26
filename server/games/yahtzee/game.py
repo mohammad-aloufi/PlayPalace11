@@ -564,6 +564,7 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
 
         active_players = [p for p in self.players if not p.is_spectator]
         if not active_players:
+            user.speak_l("action-player-not-found")
             return
             
         items = [MenuItem(text=p.name, id=p.id) for p in active_players]
