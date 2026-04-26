@@ -299,6 +299,15 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
                 is_hidden="_is_view_scoresheet_hidden",
             )
         )
+        action_set.add(
+            Action(
+                id="view_all_scoresheets",
+                label=Localization.get(locale, "yahtzee-check-scoresheet"),
+                handler="_action_view_all_scoresheets",
+                is_enabled="_is_view_scoresheet_enabled",
+                is_hidden="_is_view_scoresheet_hidden",
+            )
+        )
 
         return action_set
 
@@ -315,6 +324,7 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
         # View actions
         self.define_keybind("d", "View dice", ["view_dice"], state=KeybindState.ACTIVE)
         self.define_keybind("c", "View scoresheet", ["view_scoresheet"], state=KeybindState.ACTIVE)
+        self.define_keybind("C", "View all scoresheets", ["view_all_scoresheets"], state=KeybindState.ACTIVE)
 
     # ==========================================================================
     # Declarative Action Callbacks
@@ -543,7 +553,11 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
             user.speak_l("yahtzee-your-dice", dice=dice_str)
 
     def _action_view_scoresheet(self, player: Player, action_id: str) -> None:
-        """View scoresheet menu."""
+        """View your own scoresheet."""
+        self._show_player_scoresheet(player, player)
+
+    def _action_view_all_scoresheets(self, player: Player, action_id: str) -> None:
+        """View scoresheet menu for all players."""
         user = self.get_user(player)
         if not user:
             return
