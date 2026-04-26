@@ -648,6 +648,10 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
             target = self.get_player_by_id(selection_id)
             if target:
                 self._show_player_scoresheet(player, target)
+            else:
+                user = self.get_user(player)
+                if user:
+                    user.speak_l("action-player-not-found")
             return
 
         super()._handle_transient_display_selection(player, selection_id)

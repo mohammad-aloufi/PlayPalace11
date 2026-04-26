@@ -179,6 +179,7 @@ table-saved-destroying = Table saved! Returning to main menu.
 game-type-not-found = Game type no longer exists.
 
 # Action disabled reasons
+action-player-not-found = Player not found.
 action-not-your-turn = It's not your turn.
 action-not-playing = The game hasn't started.
 action-spectator = Spectators cannot do this.
