@@ -321,10 +321,9 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
         # Toggle dice (1-5 keys) - from DiceGameMixin
         self.setup_dice_keybinds()
 
-        # View actions
-        self.define_keybind("d", "View dice", ["view_dice"], state=KeybindState.ACTIVE)
-        self.define_keybind("c", "View scoresheet", ["view_scoresheet"], state=KeybindState.ACTIVE)
-        self.define_keybind("C", "View all scoresheets", ["view_all_scoresheets"], state=KeybindState.ACTIVE)
+        self.define_keybind("d", "View dice", ["view_dice"], state=KeybindState.ACTIVE, include_spectators=True)
+        self.define_keybind("c", "View scoresheet", ["view_scoresheet"], state=KeybindState.ACTIVE, include_spectators=True)
+        self.define_keybind("C", "View all scoresheets", ["view_all_scoresheets"], state=KeybindState.ACTIVE, include_spectators=True)
 
     # ==========================================================================
     # Declarative Action Callbacks
@@ -554,6 +553,8 @@ class YahtzeeGame(ActionGuardMixin, Game, DiceGameMixin):
 
     def _action_view_scoresheet(self, player: Player, action_id: str) -> None:
         """View your own scoresheet."""
+        if player.is_spectator:
+            return self._action_view_all_scoresheets(player, action_id)
         self._show_player_scoresheet(player, player)
 
     def _action_view_all_scoresheets(self, player: Player, action_id: str) -> None:
