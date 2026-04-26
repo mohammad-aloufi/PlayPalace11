@@ -243,7 +243,7 @@ class MenuManagementMixin:
                 doc_manager = self._table._server._documents
         
         if not doc_manager:
-            user.speak_l("action-not-available")
+            user.speak_l("action-locked")
             return
             
         folder_name = f"{self.get_type()}_rules"
