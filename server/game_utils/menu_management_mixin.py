@@ -237,7 +237,7 @@ class MenuManagementMixin:
         if not user:
             return
             
-        doc_manager = self._table._server._documents
+        doc_manager = self._table.get_documents()
             
         folder_name = f"{self.get_type()}_rules"
         meta = doc_manager.get_document_metadata(folder_name)
