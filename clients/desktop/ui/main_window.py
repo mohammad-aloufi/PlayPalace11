@@ -701,11 +701,10 @@ class MainWindow(wx.Frame):
 
     def _map_function_key(self, event, key_code: int) -> str | None:
         key_map = {
-            wx.WXK_F1: "f1",
             wx.WXK_F3: "f3",
             wx.WXK_F5: "f5",
         }
-        if key_code in (wx.WXK_F2, wx.WXK_F4):
+        if key_code in (wx.WXK_F1, wx.WXK_F2, wx.WXK_F4):
             event.Skip()
             return None
         return key_map.get(key_code)
@@ -738,7 +737,6 @@ class MainWindow(wx.Frame):
         has_shift = (modifiers & wx.MOD_SHIFT) != 0
 
         is_function_key = key_name in [
-            "f1",
             "f2",
             "f3",
             "f5",
