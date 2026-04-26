@@ -2191,7 +2191,10 @@ class MainWindow(wx.Frame):
 
         # When the server explicitly requests markdown rendering, show the
         # content in the markdown viewer instead of a plain text control.
-        if content_format == "markdown" and default_value:
+        if content_format == "markdown":
+            if not default_value:
+                default_value = "*No documentation available.*"
+                
             from .markdown_viewer_dialog import MarkdownViewerDialog
 
             dlg = MarkdownViewerDialog(self, prompt, default_value)
