@@ -237,14 +237,7 @@ class MenuManagementMixin:
         if not user:
             return
             
-        doc_manager = None
-        if hasattr(self, "_table") and self._table and hasattr(self._table, "_server") and self._table._server:
-            if hasattr(self._table._server, "_documents"):
-                doc_manager = self._table._server._documents
-        
-        if not doc_manager:
-            user.speak_l("action-locked")
-            return
+        doc_manager = self._table._server._documents
             
         folder_name = f"{self.get_type()}_rules"
         meta = doc_manager.get_document_metadata(folder_name)
